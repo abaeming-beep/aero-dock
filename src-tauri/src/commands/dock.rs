@@ -84,7 +84,7 @@ pub fn list_monitors() -> AeroResult<Vec<MonitorInfoEx>> {
     enumerate_monitors()
 }
 
-/// Auto-hide the Windows taskbar (Aero Dock becomes the bar) or restore
+/// Auto-hide the Windows taskbar (AB Dock becomes the bar) or restore
 /// it. Repositions the dock afterwards because the work area changes.
 #[tauri::command]
 pub async fn set_taskbar_hidden(app: AppHandle, hidden: bool) -> AeroResult<()> {
@@ -102,7 +102,7 @@ async fn tokio_sleep(ms: u64) {
     .ok();
 }
 
-/// Shut Aero Dock down for real, from anywhere in the UI.
+/// Shut AB Dock down for real, from anywhere in the UI.
 ///
 /// The taskbar is restored here as well as in the exit handler. Quitting
 /// is the one action where leaving the shell taskbar hidden would strand

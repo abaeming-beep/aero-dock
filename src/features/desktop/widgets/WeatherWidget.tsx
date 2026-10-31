@@ -1,5 +1,5 @@
 /**
- * Weather, and the only part of Aero Dock that leaves the machine.
+ * Weather, and the only part of AB Dock that leaves the machine.
  *
  * The README promises the app makes no network requests, so this widget
  * has to earn its exception rather than quietly break the promise. It

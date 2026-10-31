@@ -1,5 +1,5 @@
 /**
- * Every spring in Aero Dock is defined here so the whole app's "feel"
+ * Every spring in AB Dock is defined here so the whole app's "feel"
  * is tuned from one file. Short and settled: nothing overshoots visibly.
  */
 

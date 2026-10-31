@@ -13,6 +13,7 @@ import { CalendarWidget } from "./widgets/CalendarWidget";
 import { ClockWidget } from "./widgets/ClockWidget";
 import { MusicWidget } from "./widgets/MusicWidget";
 import { StatsWidget } from "./widgets/StatsWidget";
+import { TimeWidget } from "./widgets/TimeWidget";
 import { WeatherWidget } from "./widgets/WeatherWidget";
 
 /** Every widget component gets the instance it is rendering. */
@@ -35,6 +36,8 @@ export interface WidgetDefinition {
   minHeight: number;
   /** True for anything that leaves the machine. Only weather does. */
   network?: boolean;
+  /** Draws directly on the wallpaper, with no panel and no tint. */
+  bare?: boolean;
 }
 
 export const WIDGETS: WidgetDefinition[] = [
@@ -78,6 +81,15 @@ export const WIDGETS: WidgetDefinition[] = [
     component: MusicWidget,
     minWidth: 240,
     minHeight: 120,
+  },
+  {
+    kind: "time",
+    label: t.widgets.kinds.time.label,
+    description: t.widgets.kinds.time.description,
+    component: TimeWidget,
+    minWidth: 270,
+    minHeight: 60,
+    bare: true,
   },
 ];
 

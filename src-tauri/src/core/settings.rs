@@ -241,7 +241,7 @@ pub struct Settings {
     pub appearance: AppearanceSettings,
     pub pinned: Vec<PinnedItem>,
     pub launch_at_startup: bool,
-    /// Put the Windows taskbar into auto-hide so Aero Dock is the bar.
+    /// Put the Windows taskbar into auto-hide so AB Dock is the bar.
     pub hide_taskbar: bool,
     pub onboarding_complete: bool,
     pub modes: ModesSettings,

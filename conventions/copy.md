@@ -26,7 +26,7 @@
 | accent | 강조색 |
 | tint (위젯별) | 색조 |
 
-제품명 Aero Dock과 Windows, GitHub은 번역하지 않는다.
+제품명 AB Dock과 Windows, GitHub은 번역하지 않는다.
 
 ## 번역하지 않은 것
 

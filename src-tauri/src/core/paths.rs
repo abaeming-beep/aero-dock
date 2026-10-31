@@ -1,4 +1,4 @@
-//! Where Aero Dock keeps its files.
+//! Where AB Dock keeps its files.
 //!
 //! Installed, that is the usual per-user config directory under `%APPDATA%`.
 //! Portable, everything goes in a `data` folder beside the executable, so the
@@ -95,7 +95,7 @@ mod tests {
 
     #[test]
     fn installed_writes_to_the_user_profile() {
-        let exe = Path::new(r"C:\Program Files\Aero Dock");
+        let exe = Path::new(r"C:\Program Files\AB Dock");
         let installed = Path::new(r"C:\Users\a\AppData\Roaming\com.aerodock.desktop");
         assert_eq!(root_for(exe, false, installed), installed.to_path_buf());
     }

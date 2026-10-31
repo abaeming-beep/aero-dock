@@ -407,7 +407,7 @@ export function SettingsApp() {
             <section className="settings-card">
               <div className="ctl-row">
                 <CtlLabel label={t.settings.version} />
-                <span className="settings-about-value">Aero Dock {__APP_VERSION__}</span>
+                <span className="settings-about-value">AB Dock {__APP_VERSION__}</span>
               </div>
               {storage && (
                 <div className="ctl-row ctl-row-stacked">

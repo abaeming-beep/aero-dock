@@ -22,6 +22,21 @@
 
 **설정 호환.** 이전 설정 파일은 그대로 읽힌다. 없어진 필드는 무시되고 다음 저장 때 사라진다.
 
+## 2026-10-31: TiMe 위젯 추가
+
+VClouds의 Rainmeter 스킨 "TiMe - Digital"을 `TimeWidget.tsx`로 옮겼다. 값은 스킨의 `.ini`와 `UserVariables.inc`에서 가져왔다. 스킨의 라이선스는 CC BY-NC-SA 3.0이고 프로젝트 본체는 MIT이므로, 이 파일과 위 CSS는 비상업 이용과 동일 조건 공유 조건을 따른다.
+
+- 블러는 옮기지 않았다.
+- Century Gothic 파일은 저장소에 넣지 않고 시스템에 설치된 글꼴을 쓴다. 없는 PC에서는 Segoe UI로 대체된다.
+- 글꼴에 한글이 없어 요일과 월은 원본처럼 영문 대문자다.
+- 시간은 스킨 기본값인 24시간제다.
+
+## 2026-10-31: AB Dock으로 이름 변경, 아이콘 교체
+
+화면에 보이는 이름을 AB Dock으로 바꿨다. 식별자 `com.aerodock.desktop`은 그대로다. 바꾸면 설정 폴더가 달라져 기존 설정을 찾지 못한다. `aero-dock` 패키지 이름, `aero-` 클래스 이름, 창 클래스 이름, `LICENSE`의 원작자 고지와 `publisher`, `copyright`도 유지했다.
+
+앱 아이콘은 사용자의 SD 캐릭터 이미지로 만들었다(`src-tauri/icons/`, 생성: `pnpm tauri icon`). 원본의 여백을 잘라 정사각형에 맞췄다. 이 이미지는 사용자가 제공한 것으로 프로젝트의 MIT 라이선스 대상이 아니다.
+
 ## 남은 일
 
 - `pnpm install`이 esbuild 빌드 스크립트 미승인으로 exit 1을 낸다. pnpm 12가 `package.json`의 `pnpm` 필드를 읽지 않아서다. 실행과 빌드에는 지장이 없다.

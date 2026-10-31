@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Aero Dock",
+  "productName": "AB Dock",
   "version": "1.3.2",
   "identifier": "com.aerodock.desktop",
   "build": {
@@ -14,7 +14,7 @@
     "windows": [
       {
         "label": "dock",
-        "title": "Aero Dock",
+        "title": "AB Dock",
         "width": 1200,
         "height": 220,
         "transparent": true,
@@ -61,8 +61,8 @@
     "publisher": "Ryan Panda",
     "copyright": "Copyright (c) 2026 Ryan Panda",
     "category": "Utility",
-    "shortDescription": "A free RocketDock alternative for Windows",
-    "longDescription": "Aero Dock is a modern free and open-source RocketDock and Nexus Dock alternative for Windows 10 and 11. Live window previews, Aero glass, cursor magnification, and full desktop customization, built in the Frutiger Aero design language. Pin apps, switch windows, and theme everything from a single lightweight tray app.",
+    "shortDescription": "An app dock for Windows",
+    "longDescription": "AB Dock is an app dock for Windows, a personal fork of Aero Dock.",
     "homepage": "https://github.com/TheAgencyMGE/aero-dock",
     "license": "MIT"
   }

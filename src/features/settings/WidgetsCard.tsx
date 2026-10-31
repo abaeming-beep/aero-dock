@@ -64,21 +64,23 @@ function WidgetRow({
             format={(v) => `${Math.round(v * 100)}%`}
             onChange={(v) => void style({ opacity: v })}
           />
-          <div className="ctl-row">
-            <span className="ctl-label">{t.widgets.tint}</span>
-            <div className="ctl-actions">
-              <input
-                type="color"
-                className="ctl-colour"
-                aria-label={t.widgets.tintAria}
-                value={widget.accent ?? DEFAULT_ACCENT}
-                onChange={(e) => void style({ accent: e.target.value })}
-              />
-              <button className="aero-button" onClick={() => void style({ accent: null })}>
-                {t.widgets.useTheme}
-              </button>
+          {!def?.bare && (
+            <div className="ctl-row">
+              <span className="ctl-label">{t.widgets.tint}</span>
+              <div className="ctl-actions">
+                <input
+                  type="color"
+                  className="ctl-colour"
+                  aria-label={t.widgets.tintAria}
+                  value={widget.accent ?? DEFAULT_ACCENT}
+                  onChange={(e) => void style({ accent: e.target.value })}
+                />
+                <button className="aero-button" onClick={() => void style({ accent: null })}>
+                  {t.widgets.useTheme}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
           <AeroToggle
             label={t.widgets.lock}
             checked={widget.locked}

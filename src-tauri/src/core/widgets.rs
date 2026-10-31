@@ -35,6 +35,8 @@ pub enum WidgetKind {
     Weather,
     SystemStats,
     Music,
+    /// A port of the TiMe Rainmeter skin.
+    Time,
 }
 
 impl WidgetKind {
@@ -46,6 +48,7 @@ impl WidgetKind {
             Self::Weather => (280, 190),
             Self::SystemStats => (260, 220),
             Self::Music => (340, 150),
+            Self::Time => (680, 200),
         }
     }
 
@@ -62,6 +65,7 @@ impl WidgetKind {
             Self::Weather => "Weather",
             Self::SystemStats => "System stats",
             Self::Music => "Music",
+            Self::Time => "TiMe",
         }
     }
 }
@@ -149,6 +153,8 @@ impl WidgetInstance {
             y,
             width,
             height,
+            // the skin's colours already carry their own transparency
+            opacity: if kind == WidgetKind::Time { 1.0 } else { Self::default().opacity },
             ..Self::default()
         }
     }
@@ -293,6 +299,7 @@ mod tests {
             WidgetKind::Calendar,
             WidgetKind::SystemStats,
             WidgetKind::Music,
+            WidgetKind::Time,
         ] {
             assert!(!kind.uses_network(), "{kind:?} must stay offline");
         }

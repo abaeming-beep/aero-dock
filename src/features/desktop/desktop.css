@@ -63,6 +63,58 @@
   line-height: 1.4;
 }
 
+/* ---- TiMe ---------------------------------------------------------- */
+
+/* A port of a Rainmeter skin, and the one widget with no panel: its colours
+   and shadow are the skin's and stay the same in every theme, because they
+   sit on the wallpaper. Sizes are in pt to match the skin's FontSize. */
+.aero-widget-bare {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.w-time {
+  position: relative;
+  transform-origin: top left;
+  font-family: "Century Gothic", "Segoe UI", sans-serif;
+  color: rgba(255, 255, 255, 0.745);
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.08);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.w-time span {
+  position: absolute;
+  line-height: normal;
+}
+
+.w-time-day {
+  left: 0;
+  top: 10px;
+  font-size: 80pt;
+  color: rgba(255, 255, 255, 0.353);
+}
+
+.w-time-date {
+  left: 8px;
+  top: 107px;
+  font-size: 55pt;
+}
+
+.w-time-month {
+  left: 108px;
+  top: 120px;
+  font-size: 25pt;
+  color: rgba(255, 255, 255, 0.353);
+}
+
+.w-time-clock {
+  left: 108px;
+  top: 149px;
+  font-size: 25pt;
+}
+
 /* ---- clock -------------------------------------------------------- */
 
 .w-clock-face {

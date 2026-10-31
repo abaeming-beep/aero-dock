@@ -59,8 +59,8 @@ export const ko = {
   },
 
   settings: {
-    readFailed: "Aero Dock 설정을 읽지 못했습니다.",
-    readFailedHint: "이 창을 닫고 트레이 아이콘에서 Aero Dock을 다시 시작하세요.",
+    readFailed: "AB Dock 설정을 읽지 못했습니다.",
+    readFailedHint: "이 창을 닫고 트레이 아이콘에서 AB Dock을 다시 시작하세요.",
     loading: "불러오는 중",
 
     nav: {
@@ -106,16 +106,16 @@ export const ko = {
     clock: "시계와 날짜",
     status: "배터리, 휴지통",
 
-    launchAtStartup: "로그인할 때 Aero Dock 시작",
+    launchAtStartup: "로그인할 때 AB Dock 시작",
     hideTaskbar: "Windows 작업 표시줄 숨기기",
     hideTaskbarHint:
-      "Windows 작업 표시줄을 자동 숨김으로 바꿉니다. Aero Dock을 종료하면 원래대로 돌아옵니다",
+      "Windows 작업 표시줄을 자동 숨김으로 바꿉니다. AB Dock을 종료하면 원래대로 돌아옵니다",
     settingsFile: "설정 파일",
     export: "내보내기",
     import: "가져오기",
     imported: (name: string) => `${name}에서 설정을 가져왔습니다.`,
     savedTo: (path: string) => `${path}에 저장했습니다.`,
-    quitLabel: "Aero Dock 종료",
+    quitLabel: "AB Dock 종료",
     quitHint: "트레이 아이콘의 메뉴에서도 종료할 수 있습니다",
     quit: "종료",
 
@@ -272,6 +272,7 @@ export const ko = {
       weather: { label: "날씨", description: "선택한 장소의 현재 날씨" },
       systemStats: { label: "시스템 상태", description: "프로세서, 메모리, 가동 시간" },
       music: { label: "음악", description: "Windows에서 재생 중인 미디어와 재생 컨트롤" },
+      time: { label: "TiMe", description: "VClouds의 Rainmeter 스킨 TiMe를 옮긴 시계" },
     },
 
     clock: { am: "오전", pm: "오후" },
@@ -317,7 +318,7 @@ export const ko = {
   },
 
   dock: {
-    settingsButton: "Aero Dock 설정",
+    settingsButton: "AB Dock 설정",
     moreStack: (name: string) => `${name} 외`,
     menu: {
       unstack: "스택 풀기",

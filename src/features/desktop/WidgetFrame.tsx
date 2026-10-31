@@ -124,11 +124,17 @@ export function WidgetFrame({ widget, allowNetwork, onGeometry, onDragState, edi
       onPointerUp={end}
       onPointerCancel={end}
     >
-      <div className="aero-widget-panel surface">
-        <div className="aero-widget-body">
+      {def?.bare ? (
+        <div className="aero-widget-bare">
           {Body ? <Body widget={widget} allowNetwork={allowNetwork} /> : null}
         </div>
-      </div>
+      ) : (
+        <div className="aero-widget-panel surface">
+          <div className="aero-widget-body">
+            {Body ? <Body widget={widget} allowNetwork={allowNetwork} /> : null}
+          </div>
+        </div>
+      )}
 
       {editing && !widget.locked && (
         <span

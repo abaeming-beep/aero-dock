@@ -150,7 +150,7 @@ pub fn run() {
             commands::widgets::widget_media_control,
         ])
         .build(tauri::generate_context!())
-        .expect("error while building Aero Dock")
+        .expect("error while building AB Dock")
         .run(|_app, event| {
             // leaving? give the user their taskbar back
             if let tauri::RunEvent::ExitRequested { .. } = event {

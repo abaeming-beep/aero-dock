@@ -97,7 +97,7 @@ export interface ModesSettings {
   restoreWorkspaceOnSwitch: boolean;
 }
 
-export type WidgetKind = "clock" | "calendar" | "weather" | "systemStats" | "music";
+export type WidgetKind = "clock" | "calendar" | "weather" | "systemStats" | "music" | "time";
 
 /** Per-kind settings. Flat and optional so a kind can add one without a
  *  migration; each widget reads only the fields it cares about. */
