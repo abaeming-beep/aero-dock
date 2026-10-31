@@ -99,6 +99,7 @@ pub fn run() {
             commands::apps::list_folder,
             commands::apps::list_recent_files,
             commands::dock::resize_dock,
+            commands::dock::set_dock_hit_rect,
             commands::dock::list_monitors,
             commands::dock::set_dock_focusable,
             commands::dock::set_taskbar_hidden,

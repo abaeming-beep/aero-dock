@@ -65,6 +65,9 @@
     var(--surface) calc(var(--dock-opacity) * 100%),
     transparent
   );
+  /* has to fit inside SHADOW_PAD in useDockHitRegion.ts, or the window
+     region cuts it off in a hard line */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .dock-bar[data-vertical="true"] {

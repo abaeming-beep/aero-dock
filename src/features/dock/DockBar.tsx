@@ -25,6 +25,7 @@ import { FolderFlyout } from "./FolderFlyout";
 import { StackFlyout } from "./StackFlyout";
 import { WindowsFlyout } from "./WindowsFlyout";
 import { anchorFor, useMenu } from "./menuStore";
+import { useDockHitRegion } from "./useDockHitRegion";
 import "./dock.css";
 
 const GAP = 6;
@@ -189,6 +190,23 @@ export function DockBar({ settings, items, onLaunch }: DockBarProps) {
     });
   }, [windowSize.width, windowSize.height]);
 
+  // Only the panel takes clicks at rest. Hovering it, or anything drawn
+  // outside it, needs the whole window; so does the auto-hide slide.
+  const barRef = useRef<HTMLDivElement>(null);
+  const [barHovered, setBarHovered] = useState(false);
+  const [sliding, setSliding] = useState(false);
+  useDockHitRegion(
+    barRef,
+    barHovered ||
+      menuOpen ||
+      toastCount > 0 ||
+      dragging ||
+      fileDragOver ||
+      hidden ||
+      windowShrunk ||
+      sliding,
+  );
+
   const handleMove = useCallback(
     (e: React.MouseEvent) => {
       if (!draggingRef.current) mouseAxis.set(vertical ? e.clientY : e.clientX);
@@ -198,6 +216,7 @@ export function DockBar({ settings, items, onLaunch }: DockBarProps) {
 
   const handleLeave = useCallback(() => {
     mouseAxis.set(Infinity);
+    setBarHovered(false);
   }, [mouseAxis]);
 
   const openMenu = useCallback(
@@ -260,10 +279,14 @@ export function DockBar({ settings, items, onLaunch }: DockBarProps) {
       onMouseLeave={() => setPointerInside(false)}
     >
       <motion.div
+        ref={barRef}
         className="dock-bar surface surface-open"
         data-vertical={vertical}
         animate={hidden ? { ...slideOut, opacity: 0.6 } : { x: 0, y: 0, opacity: 1 }}
         transition={springs.slide}
+        onAnimationStart={() => setSliding(true)}
+        onAnimationComplete={() => setSliding(false)}
+        onMouseEnter={() => setBarHovered(true)}
         onMouseMove={handleMove}
         onMouseLeave={handleLeave}
       >

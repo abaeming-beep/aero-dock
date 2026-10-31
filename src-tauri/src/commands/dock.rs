@@ -32,6 +32,27 @@ pub fn resize_dock(app: AppHandle, width: f64, height: f64) -> AeroResult<()> {
     position_dock(&app)
 }
 
+/// Limit the dock window to one rectangle, or give it back its whole area
+/// with `None`. The window is sized for the largest thing it may show, and
+/// without this its transparent part swallows clicks meant for the windows
+/// behind it. Anything outside the rectangle is also not drawn, so the
+/// frontend sends `None` whenever a tooltip or flyout could be on screen.
+#[tauri::command]
+pub fn set_dock_hit_rect(
+    app: AppHandle,
+    rect: Option<crate::platform::windows::widget_layer::HitRect>,
+) -> AeroResult<()> {
+    use crate::platform::windows::widget_layer;
+    let window = app
+        .get_webview_window("dock")
+        .ok_or_else(|| AeroError::other("dock window missing"))?;
+    let hwnd = windows::Win32::Foundation::HWND(window.hwnd()?.0);
+    match rect {
+        Some(rect) => widget_layer::set_hit_region(hwnd, &[rect]),
+        None => widget_layer::clear_hit_region(hwnd),
+    }
+}
+
 /// Recompute and apply the dock window's position from current settings.
 /// Called on resize requests, settings changes, and WM_DISPLAYCHANGE.
 pub fn position_dock(app: &AppHandle) -> AeroResult<()> {

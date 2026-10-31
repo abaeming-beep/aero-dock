@@ -150,5 +150,6 @@ export const ipc = {
   // dock window
   resizeDock: (width: number, height: number) =>
     invoke<void>("resize_dock", { width, height }),
+  setDockHitRect: (rect: HitRect | null) => invoke<void>("set_dock_hit_rect", { rect }),
   listMonitors: () => invoke<MonitorInfoEx[]>("list_monitors"),
 };
