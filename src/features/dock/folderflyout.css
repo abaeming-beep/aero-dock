@@ -1,11 +1,7 @@
-/* Folder flyout: same deep glass family as the context menu. */
+/* Folder and stack flyouts. */
 
 .folder-flyout {
   padding: 10px;
-  --glass-tint-top: rgba(120, 185, 235, 0.6);
-  --glass-tint-mid: rgba(35, 95, 155, 0.55);
-  --glass-tint-bottom: rgba(18, 60, 110, 0.66);
-  --glass-radius: 16px;
   transform-origin: bottom center;
 }
 
@@ -13,44 +9,36 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   padding: 2px 6px 8px;
-  position: relative;
-  z-index: 3;
 }
 
 .folder-flyout-title {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: #f2faff;
-  text-shadow: 0 1px 3px rgba(8, 40, 70, 0.7);
+  font-size: var(--fs-strong);
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .folder-flyout-open {
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 8px;
+  flex: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   padding: 3px 9px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(160, 220, 255, 0.12));
-  color: #f2faff;
+  background: none;
   font-family: inherit;
-  font-size: 11.5px;
-  font-weight: 600;
+  font-size: var(--fs-small);
   cursor: pointer;
-  text-shadow: 0 1px 2px rgba(8, 40, 70, 0.6);
 }
 
 .folder-flyout-open:hover {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(160, 220, 255, 0.25));
-  box-shadow: 0 0 10px rgba(140, 210, 255, 0.4);
+  background: var(--hover);
 }
 
 .folder-flyout-grid {
   display: grid;
   gap: 4px;
-  position: relative;
-  z-index: 3;
   max-height: 264px;
   overflow-y: auto;
 }
@@ -58,8 +46,9 @@
 .folder-flyout-grid::-webkit-scrollbar {
   width: 6px;
 }
+
 .folder-flyout-grid::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--border);
   border-radius: 3px;
 }
 
@@ -69,31 +58,27 @@
   align-items: center;
   gap: 4px;
   padding: 8px 4px 6px;
-  border: 1px solid transparent;
-  border-radius: 10px;
+  border: none;
+  border-radius: var(--radius-md);
   background: none;
   cursor: pointer;
   font-family: inherit;
 }
 
 .folder-flyout-item:hover {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.32),
-    rgba(160, 220, 255, 0.14) 55%,
-    rgba(120, 195, 245, 0.24)
-  );
-  border-color: rgba(255, 255, 255, 0.4);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 0 10px rgba(140, 210, 255, 0.3);
+  background: var(--hover);
 }
 
 .folder-flyout-item img,
 .folder-flyout-glyph {
   width: 36px;
   height: 36px;
-  filter: drop-shadow(0 2px 4px rgba(8, 40, 70, 0.5));
-  font-size: 26px;
-  line-height: 36px;
+}
+
+.folder-flyout-glyph {
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
 }
 
 .folder-flyout-name {
@@ -101,21 +86,16 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 10.5px;
-  font-weight: 500;
-  color: #eef8ff;
-  text-shadow: 0 1px 2px rgba(8, 40, 70, 0.7);
+  font-size: var(--fs-small);
 }
 
 .folder-flyout-empty {
   grid-column: 1 / -1;
   padding: 18px 0;
   text-align: center;
-  font-size: 12px;
-  color: rgba(240, 250, 255, 0.75);
+  color: var(--text-muted);
 }
 
 .folder-flyout-empty[data-tone="error"] {
-  color: var(--aero-glyph-alert);
-  font-weight: 600;
+  color: var(--danger);
 }

@@ -1,12 +1,14 @@
 /**
- * Folder flyout: a glass shelf that blooms open above a pinned folder,
- * showing its contents in a grid with staggered icon entrances.
+ * Folder flyout: a panel above a pinned folder, showing its contents in a
+ * grid.
  */
 
+import { File, Folder } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { springs } from "../../engine/animation/springs";
 import { ipc } from "../../ipc/commands";
+import { t } from "../../i18n";
 import { notify } from "../feedback/toastStore";
 import type { Settings } from "../../ipc/types";
 import { useDockIcons } from "../../state/dockStore";
@@ -90,11 +92,11 @@ export function FolderFlyout({ edge }: FolderFlyoutProps) {
     <AnimatePresence>
       {active && item && (
         <motion.div
-          className="folder-flyout glass"
+          className="folder-flyout surface"
           style={style}
-          initial={{ opacity: 0, scale: 0.8, ...from }}
+          initial={{ opacity: 0, scale: 0.97, ...from }}
           animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
-          exit={{ opacity: 0, scale: 0.92, filter: "blur(6px)", transition: { duration: 0.16 } }}
+          exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.12 } }}
           transition={springs.bloom}
         >
           <div className="folder-flyout-header">
@@ -102,34 +104,34 @@ export function FolderFlyout({ edge }: FolderFlyoutProps) {
             <button
               className="folder-flyout-open"
               onClick={() => {
-                ipc.launch(item.target).catch(notify.on(`Could not open ${item.name}`));
+                ipc.launch(item.target).catch(notify.on(t.errors.open(item.name)));
                 close();
               }}
             >
-              Open in Explorer
+              {t.dock.openInExplorer}
             </button>
           </div>
           <div className="folder-flyout-grid" style={{ gridTemplateColumns: `repeat(${COLUMNS}, 1fr)` }}>
             {entries === null && (
               <span className="folder-flyout-empty">
                 <span className="flyout-spinner" aria-hidden />
-                Reading folder…
+                {t.dock.folderReading}
               </span>
             )}
             {entries?.length === 0 && (
               <span className="folder-flyout-empty" data-tone={failed ? "error" : undefined}>
-                {failed ? "This folder could not be read" : "Nothing in this folder"}
+                {failed ? t.dock.folderUnreadable : t.dock.folderEmpty}
               </span>
             )}
             {entries?.map((entry, i) => (
               <motion.button
                 key={entry.path}
                 className="folder-flyout-item"
-                initial={{ opacity: 0, y: 10, scale: 0.85 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ ...springs.bloom, delay: Math.min(i * 0.022, 0.35) }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.12, delay: Math.min(i * 0.01, 0.12) }}
                 onClick={() => {
-                  ipc.launch(entry.path).catch(notify.on(`Could not open ${entry.name}`));
+                  ipc.launch(entry.path).catch(notify.on(t.errors.open(entry.name)));
                   close();
                 }}
                 title={entry.name}
@@ -137,7 +139,9 @@ export function FolderFlyout({ edge }: FolderFlyoutProps) {
                 {iconUrls[entry.path] ? (
                   <img src={iconUrls[entry.path]} alt="" draggable={false} />
                 ) : (
-                  <span className="folder-flyout-glyph">{entry.isDir ? "📁" : "📄"}</span>
+                  <span className="folder-flyout-glyph">
+                    {entry.isDir ? <Folder size={28} aria-hidden /> : <File size={28} aria-hidden />}
+                  </span>
                 )}
                 <span className="folder-flyout-name">{entry.name}</span>
               </motion.button>

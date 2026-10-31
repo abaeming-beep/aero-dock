@@ -6,12 +6,13 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { LOCALE } from "../../../i18n";
 import type { WidgetProps } from "../registry";
 
 /** Which weekday the locale starts on: 0 Sunday through 6 Saturday. */
 function firstDayOfWeek(): number {
   type WithWeekInfo = { weekInfo?: { firstDay?: number } };
-  const locale = new Intl.Locale(navigator.language) as Intl.Locale & WithWeekInfo;
+  const locale = new Intl.Locale(LOCALE) as Intl.Locale & WithWeekInfo;
   // weekInfo counts 1 Monday through 7 Sunday; the Date API counts
   // 0 Sunday through 6 Saturday, so 7 folds back to 0.
   const first = locale.weekInfo?.firstDay;
@@ -39,7 +40,7 @@ export function CalendarWidget(_: WidgetProps) {
     for (let i = 0; i < 7; i += 1) {
       // any Sunday works as a reference for naming the days
       const ref = new Date(2024, 8, 1 + ((start + i) % 7));
-      names.push(ref.toLocaleDateString(undefined, { weekday: "narrow" }));
+      names.push(ref.toLocaleDateString(LOCALE, { weekday: "narrow" }));
     }
 
     const firstOfMonth = new Date(year, month, 1);
@@ -53,7 +54,7 @@ export function CalendarWidget(_: WidgetProps) {
     return {
       weekdays: names,
       cells: list,
-      monthLabel: today.toLocaleDateString(undefined, { month: "long", year: "numeric" }),
+      monthLabel: today.toLocaleDateString(LOCALE, { month: "long", year: "numeric" }),
     };
   }, [today]);
 

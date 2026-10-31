@@ -1,9 +1,46 @@
 /**
- * Aero-styled form controls for the settings window: slider, toggle,
- * and segmented picker. Purely presentational; parents own the values.
+ * Form controls for the settings window: slider, toggle, segmented picker,
+ * and the ? tooltip that carries every explanation. Purely presentational;
+ * parents own the values.
  */
 
-import { useId } from "react";
+import { CircleHelp } from "lucide-react";
+import { useId, useState } from "react";
+import { t } from "../../i18n";
+
+/** Explanation behind a ? icon: shown on hover, keyboard focus and click. */
+export function HelpTip({ text }: { text: string }) {
+  const id = useId();
+  const [open, setOpen] = useState(false);
+  return (
+    <span className="help-tip" data-open={open}>
+      <button
+        type="button"
+        className="help-tip-button"
+        aria-label={t.common.help}
+        aria-describedby={id}
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        onBlur={() => setOpen(false)}
+      >
+        <CircleHelp size={14} aria-hidden />
+      </button>
+      <span id={id} role="tooltip" className="help-tip-text">
+        {text}
+      </span>
+    </span>
+  );
+}
+
+/** A row label, with its explanation beside it when it has one. */
+export function CtlLabel({ label, hint }: { label: string; hint?: string }) {
+  return (
+    <span className="ctl-label">
+      {label}
+      {hint && <HelpTip text={hint} />}
+    </span>
+  );
+}
 
 interface SliderProps {
   label: string;
@@ -20,7 +57,7 @@ export function AeroSlider({ label, value, min, max, step = 0.01, format, onChan
   const pct = ((value - min) / (max - min)) * 100;
   return (
     <div className="ctl-row">
-      <label className="ctl-label" htmlFor={id}>
+      <label className="ctl-label ctl-label-fixed" htmlFor={id}>
         {label}
       </label>
       <input
@@ -49,12 +86,11 @@ interface ToggleProps {
 export function AeroToggle({ label, checked, onChange, hint }: ToggleProps) {
   return (
     <div className="ctl-row">
-      <span className="ctl-label" title={hint}>
-        {label}
-      </span>
+      <CtlLabel label={label} hint={hint} />
       <button
         className="ctl-toggle"
         role="switch"
+        aria-label={label}
         aria-checked={checked}
         data-on={checked}
         onClick={() => onChange(!checked)}

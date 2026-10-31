@@ -7,6 +7,7 @@
  */
 
 import type { ComponentType } from "react";
+import { t } from "../../i18n";
 import type { WidgetInstance, WidgetKind } from "../../ipc/types";
 import { CalendarWidget } from "./widgets/CalendarWidget";
 import { ClockWidget } from "./widgets/ClockWidget";
@@ -39,24 +40,24 @@ export interface WidgetDefinition {
 export const WIDGETS: WidgetDefinition[] = [
   {
     kind: "clock",
-    label: "Clock",
-    description: "Analogue or digital, with a sweeping second hand",
+    label: t.widgets.kinds.clock.label,
+    description: t.widgets.kinds.clock.description,
     component: ClockWidget,
     minWidth: 140,
     minHeight: 140,
   },
   {
     kind: "calendar",
-    label: "Calendar",
-    description: "The month, with today marked",
+    label: t.widgets.kinds.calendar.label,
+    description: t.widgets.kinds.calendar.description,
     component: CalendarWidget,
     minWidth: 210,
     minHeight: 210,
   },
   {
     kind: "weather",
-    label: "Weather",
-    description: "Current conditions for a place you choose",
+    label: t.widgets.kinds.weather.label,
+    description: t.widgets.kinds.weather.description,
     component: WeatherWidget,
     minWidth: 200,
     minHeight: 150,
@@ -64,16 +65,16 @@ export const WIDGETS: WidgetDefinition[] = [
   },
   {
     kind: "systemStats",
-    label: "System stats",
-    description: "Processor, memory and uptime",
+    label: t.widgets.kinds.systemStats.label,
+    description: t.widgets.kinds.systemStats.description,
     component: StatsWidget,
     minWidth: 190,
     minHeight: 160,
   },
   {
     kind: "music",
-    label: "Music",
-    description: "Whatever Windows is playing, with transport controls",
+    label: t.widgets.kinds.music.label,
+    description: t.widgets.kinds.music.description,
     component: MusicWidget,
     minWidth: 240,
     minHeight: 120,

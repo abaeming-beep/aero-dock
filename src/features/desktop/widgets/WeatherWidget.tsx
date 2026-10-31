@@ -12,7 +12,18 @@
  * nothing else, so there is no profile to attach it to.
  */
 
+import {
+  Cloud,
+  CloudLightning,
+  CloudMoon,
+  CloudRain,
+  CloudSnow,
+  CloudSun,
+  Moon,
+  Sun,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { t } from "../../../i18n";
 import type { WidgetProps } from "../registry";
 
 /** Refreshed on the quarter hour; weather does not change faster. */
@@ -27,58 +38,30 @@ interface Reading {
 
 /** The WMO codes Open-Meteo returns, grouped into what to draw. */
 function describe(code: number): { label: string; icon: Icon } {
-  if (code === 0) return { label: "Clear", icon: "sun" };
-  if (code <= 2) return { label: "Partly cloudy", icon: "partly" };
-  if (code === 3) return { label: "Overcast", icon: "cloud" };
-  if (code <= 48) return { label: "Fog", icon: "cloud" };
-  if (code <= 57) return { label: "Drizzle", icon: "rain" };
-  if (code <= 67) return { label: "Rain", icon: "rain" };
-  if (code <= 77) return { label: "Snow", icon: "snow" };
-  if (code <= 82) return { label: "Showers", icon: "rain" };
-  if (code <= 86) return { label: "Snow showers", icon: "snow" };
-  return { label: "Thunderstorm", icon: "storm" };
+  if (code === 0) return { label: t.widgets.weather.clear, icon: "sun" };
+  if (code <= 2) return { label: t.widgets.weather.partlyCloudy, icon: "partly" };
+  if (code === 3) return { label: t.widgets.weather.overcast, icon: "cloud" };
+  if (code <= 48) return { label: t.widgets.weather.fog, icon: "cloud" };
+  if (code <= 57) return { label: t.widgets.weather.drizzle, icon: "rain" };
+  if (code <= 67) return { label: t.widgets.weather.rain, icon: "rain" };
+  if (code <= 77) return { label: t.widgets.weather.snow, icon: "snow" };
+  if (code <= 82) return { label: t.widgets.weather.showers, icon: "rain" };
+  if (code <= 86) return { label: t.widgets.weather.snowShowers, icon: "snow" };
+  return { label: t.widgets.weather.thunderstorm, icon: "storm" };
 }
 
 type Icon = "sun" | "partly" | "cloud" | "rain" | "snow" | "storm";
 
 function WeatherIcon({ icon, isDay }: { icon: Icon; isDay: boolean }) {
-  const cloud = (
-    <path
-      d="M20 40h22a9 9 0 0 0 .7-18A14 14 0 0 0 16 26a8 8 0 0 0 4 14z"
-      fill="rgba(255,255,255,0.88)"
-      stroke="rgba(255,255,255,0.7)"
-      strokeWidth="1.2"
-    />
-  );
-  return (
-    <svg viewBox="0 0 60 60" className="w-weather-icon" aria-hidden>
-      {(icon === "sun" || icon === "partly") &&
-        (isDay ? (
-          <circle cx={icon === "sun" ? 30 : 22} cy={icon === "sun" ? 28 : 22} r="12" fill="#ffd76e" />
-        ) : (
-          <path d="M30 12a14 14 0 1 0 14 14 11 11 0 0 1-14-14z" fill="#e8f4ff" />
-        ))}
-      {icon !== "sun" && cloud}
-      {icon === "rain" &&
-        [0, 1, 2].map((i) => (
-          <line
-            key={i}
-            x1={22 + i * 8}
-            y1="44"
-            x2={19 + i * 8}
-            y2="53"
-            stroke="var(--aero-accent, #2f9de3)"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-          />
-        ))}
-      {icon === "snow" &&
-        [0, 1, 2].map((i) => <circle key={i} cx={22 + i * 8} cy={49} r="2.4" fill="#ffffff" />)}
-      {icon === "storm" && (
-        <path d="M30 42l-6 9h5l-3 8 10-12h-5l4-5z" fill="#ffd76e" />
-      )}
-    </svg>
-  );
+  const Glyph = {
+    sun: isDay ? Sun : Moon,
+    partly: isDay ? CloudSun : CloudMoon,
+    cloud: Cloud,
+    rain: CloudRain,
+    snow: CloudSnow,
+    storm: CloudLightning,
+  }[icon];
+  return <Glyph className="w-weather-icon" strokeWidth={1.5} aria-hidden />;
 }
 
 export function WeatherWidget({ widget, allowNetwork }: WidgetProps) {
@@ -135,22 +118,22 @@ export function WeatherWidget({ widget, allowNetwork }: WidgetProps) {
   if (!located) {
     return (
       <div className="w-empty">
-        Set a location for this widget in Settings, then Widgets.
+        {t.widgets.weather.needLocation}
       </div>
     );
   }
   if (!allowNetwork) {
     return (
       <div className="w-empty">
-        Weather is offline. Allow it in Settings, then Widgets.
+        {t.widgets.weather.offline}
       </div>
     );
   }
   if (failed && !reading) {
-    return <div className="w-empty">Could not reach the weather service.</div>;
+    return <div className="w-empty">{t.widgets.weather.failed}</div>;
   }
   if (!reading) {
-    return <div className="w-empty">Checking the sky…</div>;
+    return <div className="w-empty">{t.widgets.weather.loading}</div>;
   }
 
   const { label, icon } = describe(reading.code);
@@ -164,7 +147,7 @@ export function WeatherWidget({ widget, allowNetwork }: WidgetProps) {
           <span className="w-weather-unit">{celsius ? "°C" : "°F"}</span>
         </div>
         <div className="w-weather-label">{label}</div>
-        <div className="w-weather-place">{place || "Your location"}</div>
+        <div className="w-weather-place">{place || t.widgets.weather.yourLocation}</div>
       </div>
     </div>
   );

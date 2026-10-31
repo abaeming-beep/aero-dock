@@ -118,19 +118,19 @@ export function flyoutStyle(
 export function bloomOffset(edge: DockEdge): { x: number; y: number } {
   switch (edge) {
     case "bottom":
-      return { x: 0, y: 12 };
+      return { x: 0, y: 6 };
     case "top":
-      return { x: 0, y: -12 };
+      return { x: 0, y: -6 };
     case "left":
-      return { x: -12, y: 0 };
+      return { x: -6, y: 0 };
     case "right":
-      return { x: 12, y: 0 };
+      return { x: 6, y: 0 };
   }
 }
 
 /**
- * A panel centered on the dock and pushed clear of it (search overlay,
- * welcome card). Centering rides on the CSS `translate` property rather
+ * A panel centered on the dock and pushed clear of it (welcome card).
+ * Centering rides on the CSS `translate` property rather
  * than `transform`, because motion owns `transform` for the entrance
  * animation and an inline transform would silently drop the centering.
  */

@@ -1,35 +1,52 @@
 /**
- * The settings window: a Frutiger Aero control panel. Every change goes
- * through the settings store → Rust → broadcast, so the dock restyles
- * live while you drag a slider.
+ * The settings window: a sidebar of sections and one section at a time.
+ * Every change goes through the settings store, Rust and back as a
+ * broadcast, so the dock restyles live while you drag a slider.
  */
 
 import { disable, enable, isEnabled } from "@tauri-apps/plugin-autostart";
+import {
+  Info,
+  Layers,
+  LayoutGrid,
+  PanelBottom,
+  Palette,
+  SlidersHorizontal,
+  Volume2,
+  type LucideIcon,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useLiquidGlass } from "../../engine/glass/useLiquidGlass";
-import { applyAppearance } from "../../engine/themes/applyTheme";
-import { THEMES } from "../../engine/themes/themes";
+import { applyAppearance, normalizeTheme, type ThemeId } from "../../engine/themes/applyTheme";
 import { ipc } from "../../ipc/commands";
-import type {
-  DockEdge,
-  MonitorInfoEx,
-  Settings,
-  StorageInfo,
-  SurfaceStyle,
-} from "../../ipc/types";
+import type { DockEdge, MonitorInfoEx, Settings, StorageInfo } from "../../ipc/types";
 import { useSettings } from "../../state/settingsStore";
-import { KOFI_URL, REPO_URL } from "../../links";
+import { REPO_URL } from "../../links";
 import { AudioCard } from "./AudioCard";
 import { ModesCard } from "./ModesCard";
 import { WidgetsCard } from "./WidgetsCard";
-import { AeroSegmented, AeroSlider, AeroToggle } from "./controls";
+import { AeroSegmented, AeroSlider, AeroToggle, CtlLabel, HelpTip } from "./controls";
+import { t } from "../../i18n";
 import "./settings.css";
-
 
 const pctFmt = (v: number) => `${Math.round(v * 100)}%`;
 
-/** One inline status line under the settings-file controls. The window
- * has room to say what happened, so nothing here needs a modal. */
+/** How long a status line stays before it clears itself. */
+const STATUS_MS = 6000;
+
+type SectionId = keyof Omit<typeof t.settings.nav, "label">;
+
+const SECTIONS: { id: SectionId; Icon: LucideIcon; help?: string }[] = [
+  { id: "general", Icon: SlidersHorizontal },
+  { id: "dock", Icon: PanelBottom },
+  { id: "appearance", Icon: Palette },
+  { id: "modes", Icon: Layers },
+  { id: "audio", Icon: Volume2, help: t.audio.help },
+  { id: "widgets", Icon: LayoutGrid, help: t.widgets.help },
+  { id: "about", Icon: Info },
+];
+
+/** One status line under the content. The window has room to say what
+ * happened, so nothing here needs a modal. */
 interface Status {
   tone: "ok" | "error";
   text: string;
@@ -37,6 +54,7 @@ interface Status {
 
 export function SettingsApp() {
   const { settings, hydrate, apply } = useSettings();
+  const [section, setSection] = useState<SectionId>("general");
   const [status, setStatus] = useState<Status | null>(null);
   const [monitors, setMonitors] = useState<MonitorInfoEx[]>([]);
   const [storage, setStorage] = useState<StorageInfo | null>(null);
@@ -58,31 +76,30 @@ export function SettingsApp() {
       .catch((e) => console.warn("storage info unavailable", e));
   }, [hydrate]);
 
-  // settings window uses the same token system for its own glass
   useEffect(() => {
-    if (settings) applyAppearance(settings, null, "settings");
+    if (settings) applyAppearance(settings);
   }, [settings]);
 
-  // the refracting backdrop, sized per card
-  useLiquidGlass(settings?.appearance.settingsSurface === "liquid");
+  useEffect(() => {
+    if (!status) return;
+    const id = setTimeout(() => setStatus(null), STATUS_MS);
+    return () => clearTimeout(id);
+  }, [status]);
 
-  // The window paints its sky immediately; this is what fills it until
-  // settings arrive from Rust (or says so if they never do).
+  // This is what fills the window until settings arrive from Rust (or says
+  // so if they never do).
   if (!settings) {
     return (
       <div className="settings-root settings-root-centered">
         {hydrateFailed ? (
           <div className="settings-splash">
-            <span className="settings-orb" aria-hidden />
-            <p>Aero Dock could not read its settings.</p>
-            <p className="settings-splash-hint">
-              Close this window and restart Aero Dock from the tray icon.
-            </p>
+            <p>{t.settings.readFailed}</p>
+            <p className="settings-splash-hint">{t.settings.readFailedHint}</p>
           </div>
         ) : (
           <div className="settings-splash">
-            <span className="settings-orb settings-orb-pulse" aria-hidden />
-            <p>Loading your dock…</p>
+            <span className="flyout-spinner" aria-hidden />
+            <p>{t.settings.loading}</p>
           </div>
         )}
       </div>
@@ -93,7 +110,7 @@ export function SettingsApp() {
   const set = (fn: (draft: Settings) => void) => {
     apply(fn).catch((e) => {
       console.error("settings update failed", e);
-      setStatus({ tone: "error", text: `Could not save that change: ${e}` });
+      setStatus({ tone: "error", text: `${t.errors.saveChange}: ${e}` });
     });
   };
 
@@ -107,7 +124,7 @@ export function SettingsApp() {
       });
     } catch (e) {
       console.error("autostart toggle failed", e);
-      setStatus({ tone: "error", text: `Could not change the startup setting: ${e}` });
+      setStatus({ tone: "error", text: `${t.errors.startup}: ${e}` });
     }
   };
 
@@ -115,410 +132,308 @@ export function SettingsApp() {
     try {
       const json = await file.text();
       await ipc.importSettings(json);
-      setStatus({ tone: "ok", text: `Imported settings from ${file.name}.` });
+      setStatus({ tone: "ok", text: t.settings.imported(file.name) });
     } catch (e) {
       console.error("import failed", e);
-      setStatus({ tone: "error", text: `Could not import that file: ${e}` });
+      setStatus({ tone: "error", text: `${t.errors.importFile}: ${e}` });
     }
   };
 
   const openLink = (url: string) =>
     ipc
       .launch(url)
-      .catch((e) => setStatus({ tone: "error", text: `Could not open the browser: ${e}` }));
+      .catch((e) => setStatus({ tone: "error", text: `${t.errors.openBrowser}: ${e}` }));
+
+  const onStatus = (tone: Status["tone"], text: string) => setStatus({ tone, text });
+  const current = SECTIONS.find((s) => s.id === section);
 
   return (
     <div className="settings-root">
-      {/* ambient scenery: slow bubbles rising through the light */}
-      <div className="settings-bubbles" aria-hidden>
-        {[0, 1, 2, 3, 4].map((i) => (
-          <span key={i} className="settings-bubble" style={{ ["--i" as string]: i }} />
+      <nav className="settings-nav" aria-label={t.settings.nav.label}>
+        {SECTIONS.map(({ id, Icon }) => (
+          <button
+            key={id}
+            className="settings-nav-item"
+            data-active={id === section}
+            aria-current={id === section ? "page" : undefined}
+            aria-label={t.settings.nav[id]}
+            title={t.settings.nav[id]}
+            onClick={() => setSection(id)}
+          >
+            <Icon size={18} aria-hidden />
+            <span>{t.settings.nav[id]}</span>
+          </button>
         ))}
-      </div>
-      <header className="settings-header">
-        <span className="settings-orb" aria-hidden />
-        <div>
-          <h1>Aero Dock</h1>
-          <p>Bring beauty back to the desktop.</p>
-        </div>
-        <button
-          className="settings-support-chip"
-          title="Support Aero Dock on Ko-fi"
-          onClick={() => void openLink(KOFI_URL)}
-        >
-          <span aria-hidden>☕</span>
-          Support
-        </button>
-      </header>
+      </nav>
 
-      <main className="settings-scroll">
-        {/* ---- themes ---- */}
-        <section className="settings-card glass">
-          <h2>Theme</h2>
-          <div className="theme-grid">
-            {THEMES.map((t) => (
-              <button
-                key={t.id}
-                className="theme-swatch"
-                data-active={appearance.theme === t.id}
-                onClick={() => set((d) => void (d.appearance.theme = t.id))}
-              >
-                <span
-                  className="theme-swatch-preview"
-                  style={{ background: `linear-gradient(150deg, ${t.preview[0]}, ${t.preview[1]})` }}
-                />
-                <span className="theme-swatch-name">{t.name}</span>
-              </button>
-            ))}
-          </div>
+      <main className="settings-main">
+        {/* keyed so a new section starts at the top rather than mid-scroll */}
+        <div className="settings-scroll" key={section}>
+          <header className="settings-heading">
+            <h1>{t.settings.nav[section]}</h1>
+            {current?.help && <HelpTip text={current.help} />}
+          </header>
 
-          <AeroSegmented<SurfaceStyle>
-            label="Dock material"
-            value={appearance.dockSurface}
-            options={[
-              { value: "aero", label: "Classic" },
-              { value: "liquid", label: "Liquid" },
-            ]}
-            onChange={(v) => set((d) => void (d.appearance.dockSurface = v))}
-          />
-          <AeroSegmented<SurfaceStyle>
-            label="Settings material"
-            value={appearance.settingsSurface}
-            options={[
-              { value: "aero", label: "Classic" },
-              { value: "liquid", label: "Liquid" },
-            ]}
-            onChange={(v) => set((d) => void (d.appearance.settingsSurface = v))}
-          />
-          <p className="settings-note">
-            Classic is the glossy Aero panel. Liquid keeps the same colours but
-            renders as thin glass: less tint in the body, the light moved to the
-            rim. The two windows are set separately, so you can mix them.
-          </p>
-
-        </section>
-
-        {/* ---- dock ---- */}
-        <section className="settings-card glass">
-          <h2>Dock</h2>
-          <AeroSegmented<DockEdge>
-            label="Position"
-            value={dock.edge}
-            options={[
-              { value: "bottom", label: "Bottom" },
-              { value: "top", label: "Top" },
-              { value: "left", label: "Left" },
-              { value: "right", label: "Right" },
-            ]}
-            onChange={(edge) => set((d) => void (d.dock.edge = edge))}
-          />
-          {monitors.length > 1 && (
-            <AeroSegmented<string>
-              label="Monitor"
-              value={dock.monitor ?? ""}
-              options={monitors.map((m) => ({
-                value: m.isPrimary ? "" : m.name,
-                label: `${m.name.replace(/^\\\\\.\\/, "")}${m.isPrimary ? " (primary)" : ""}`,
-              }))}
-              onChange={(name) => set((d) => void (d.dock.monitor = name || null))}
-            />
-          )}
-          <AeroSlider
-            label="Icon size"
-            value={dock.iconSize}
-            min={32}
-            max={80}
-            step={2}
-            format={(v) => `${v}px`}
-            onChange={(v) => set((d) => void (d.dock.iconSize = v))}
-          />
-          <AeroToggle
-            label="Magnification"
-            checked={dock.magnification}
-            onChange={(v) => set((d) => void (d.dock.magnification = v))}
-          />
-          {dock.magnification && (
-            <AeroSlider
-              label="Magnification amount"
-              value={dock.magnificationScale}
-              min={1.1}
-              max={1.9}
-              step={0.05}
-              format={(v) => `${Math.round((v - 1) * 100)}%`}
-              onChange={(v) => set((d) => void (d.dock.magnificationScale = v))}
-            />
-          )}
-          <AeroToggle
-            label="Floating (detached from edge)"
-            checked={dock.floating}
-            onChange={(v) => set((d) => void (d.dock.floating = v))}
-          />
-          <AeroToggle
-            label="Show running applications"
-            checked={dock.showRunningApps}
-            onChange={(v) => set((d) => void (d.dock.showRunningApps = v))}
-          />
-          <AeroToggle
-            label="Automatically hide the dock"
-            checked={dock.autoHide}
-            hint="The dock slides away and returns when you move the mouse to the screen edge"
-            onChange={(v) => set((d) => void (d.dock.autoHide = v))}
-          />
-          {dock.autoHide && (
-            <AeroSlider
-              label="Hide after"
-              value={dock.autoHideDelayMs}
-              min={200}
-              max={5000}
-              step={100}
-              format={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}s` : `${v}ms`)}
-              onChange={(v) => set((d) => void (d.dock.autoHideDelayMs = v))}
-            />
-          )}
-        </section>
-
-        {/* ---- what the dock shows ---- */}
-        <section className="settings-card glass">
-          <h2>Dock items</h2>
-          <AeroToggle
-            label="Search button"
-            checked={dock.showSearchButton}
-            onChange={(v) => set((d) => void (d.dock.showSearchButton = v))}
-          />
-          <AeroToggle
-            label="Settings button"
-            checked={dock.showSettingsButton}
-            onChange={(v) => set((d) => void (d.dock.showSettingsButton = v))}
-          />
-          <AeroToggle
-            label="Clock and date"
-            checked={dock.showClock}
-            onChange={(v) => set((d) => void (d.dock.showClock = v))}
-          />
-          <AeroToggle
-            label="Battery, network, volume, Recycle Bin"
-            checked={dock.showSystemStatus}
-            onChange={(v) => set((d) => void (d.dock.showSystemStatus = v))}
-          />
-        </section>
-
-        {/* ---- appearance ---- */}
-        <section className="settings-card glass">
-          <h2>Glass &amp; Light</h2>
-          <AeroSlider
-            label="Opacity"
-            value={appearance.transparency}
-            min={0.3}
-            max={1}
-            format={pctFmt}
-            onChange={(v) => set((d) => void (d.appearance.transparency = v))}
-          />
-          <AeroSlider
-            label="Glass intensity"
-            value={appearance.glassIntensity}
-            min={0}
-            max={1}
-            format={pctFmt}
-            onChange={(v) => set((d) => void (d.appearance.glassIntensity = v))}
-          />
-          <AeroSlider
-            label="Bloom"
-            value={appearance.bloomAmount}
-            min={0}
-            max={1}
-            format={pctFmt}
-            onChange={(v) => set((d) => void (d.appearance.bloomAmount = v))}
-          />
-          <AeroSlider
-            label="Reflections"
-            value={appearance.reflectionStrength}
-            min={0}
-            max={1}
-            format={pctFmt}
-            onChange={(v) => set((d) => void (d.appearance.reflectionStrength = v))}
-          />
-          <AeroSegmented<string>
-            label="Ambient scene"
-            value={appearance.scene}
-            options={[
-              { value: "none", label: "None" },
-              { value: "dust", label: "Dust" },
-              { value: "rain", label: "Rain" },
-              { value: "snow", label: "Snow" },
-              { value: "bubbles", label: "Ocean" },
-              { value: "aurora", label: "Aurora" },
-            ]}
-            onChange={(v) => set((d) => void (d.appearance.scene = v))}
-          />
-          <AeroSlider
-            label="Particles"
-            value={appearance.particleDensity}
-            min={0}
-            max={1}
-            format={pctFmt}
-            onChange={(v) => set((d) => void (d.appearance.particleDensity = v))}
-          />
-          <AeroToggle
-            label="Tint from wallpaper"
-            checked={appearance.wallpaperSync}
-            hint="Derives the accent color from your current wallpaper"
-            onChange={(v) => set((d) => void (d.appearance.wallpaperSync = v))}
-          />
-          <AeroSlider
-            label="Animation speed"
-            value={appearance.animationSpeed}
-            min={0.5}
-            max={2}
-            format={(v) => `${v.toFixed(2)}×`}
-            onChange={(v) => set((d) => void (d.appearance.animationSpeed = v))}
-          />
-        </section>
-
-        {/* ---- behavior ---- */}
-        <section className="settings-card glass">
-          <h2>Behavior</h2>
-          <AeroToggle
-            label="Start Aero Dock when I sign in"
-            checked={settings.launchAtStartup}
-            onChange={toggleStartup}
-          />
-          <AeroToggle
-            label="Hide the Windows taskbar"
-            checked={settings.hideTaskbar}
-            hint="Puts the Windows taskbar into auto-hide so Aero Dock is your bar; restored when you quit"
-            onChange={(v) => {
-              ipc.setTaskbarHidden(v).catch((e) => {
-                console.error("taskbar toggle failed", e);
-                setStatus({ tone: "error", text: `Could not change the taskbar: ${e}` });
-              });
-              set((d) => void (d.hideTaskbar = v));
-            }}
-          />
-          <div className="ctl-row">
-            <span className="ctl-label">Settings file</span>
-            <div className="ctl-actions">
-              <button
-                className="aero-button"
-                onClick={() =>
-                  ipc
-                    .exportSettingsFile()
-                    .then((path) => setStatus({ tone: "ok", text: `Saved to ${path}` }))
-                    .catch((e) => {
-                      console.error("export failed", e);
-                      setStatus({ tone: "error", text: `Could not export settings: ${e}` });
-                    })
-                }
-              >
-                Export…
-              </button>
-              <button className="aero-button" onClick={() => importRef.current?.click()}>
-                Import…
-              </button>
-              <input
-                ref={importRef}
-                type="file"
-                accept=".json"
-                hidden
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) doImport(f);
-                  e.target.value = "";
+          {section === "general" && (
+            <section className="settings-card">
+              <AeroToggle
+                label={t.settings.launchAtStartup}
+                checked={settings.launchAtStartup}
+                onChange={toggleStartup}
+              />
+              <AeroToggle
+                label={t.settings.hideTaskbar}
+                checked={settings.hideTaskbar}
+                hint={t.settings.hideTaskbarHint}
+                onChange={(v) => {
+                  ipc.setTaskbarHidden(v).catch((e) => {
+                    console.error("taskbar toggle failed", e);
+                    setStatus({ tone: "error", text: `${t.errors.taskbar}: ${e}` });
+                  });
+                  set((d) => void (d.hideTaskbar = v));
                 }}
               />
-            </div>
-          </div>
-          <div className="ctl-row">
-            <span className="ctl-label">Quit Aero Dock</span>
-            <div className="ctl-actions">
-              <button
-                className="aero-button aero-button-danger"
-                onClick={() =>
-                  ipc
-                    .quitApp()
-                    .catch((e) =>
-                      setStatus({ tone: "error", text: `Could not quit: ${e}` }),
-                    )
-                }
-              >
-                Quit
-              </button>
-            </div>
-          </div>
-          <p className="settings-note">
-            Also available by right-clicking the Aero Dock tray icon.
-          </p>
-          {status && (
-            <p className="settings-note" data-tone={status.tone} role="status">
-              {status.text}
-            </p>
-          )}
-        </section>
-
-        <ModesCard
-          settings={settings}
-          onStatus={(tone, text) => setStatus({ tone, text })}
-        />
-
-        <AudioCard
-          settings={settings}
-          onStatus={(tone, text) => setStatus({ tone, text })}
-        />
-
-        <WidgetsCard
-          settings={settings}
-          onStatus={(tone, text) => setStatus({ tone, text })}
-        />
-
-        {/* ---- support ---- */}
-        <section className="settings-card glass settings-support">
-          <h2>
-            Support Aero Dock <span aria-hidden>☕</span>
-          </h2>
-          <p className="settings-note settings-support-copy">
-            Aero Dock is free and independently developed. If you enjoy using
-            it, you can support continued development.
-          </p>
-          <div className="settings-support-actions">
-            <button className="settings-support-cta" onClick={() => void openLink(KOFI_URL)}>
-              Support on Ko-fi <span aria-hidden>&rarr;</span>
-            </button>
-          </div>
-        </section>
-
-        {/* ---- about ---- */}
-        <section className="settings-card glass">
-          <h2>About</h2>
-          <div className="ctl-row">
-            <span className="ctl-label">Version</span>
-            <span className="settings-about-value">Aero Dock {__APP_VERSION__}</span>
-          </div>
-          {storage && (
-            <>
               <div className="ctl-row">
-                <span className="ctl-label">Storage</span>
-                <span className="settings-about-value">
-                  {storage.portable ? "Portable" : "Installed"}
-                </span>
+                <CtlLabel label={t.settings.settingsFile} />
+                <div className="ctl-actions">
+                  <button
+                    className="aero-button"
+                    onClick={() =>
+                      ipc
+                        .exportSettingsFile()
+                        .then((path) => setStatus({ tone: "ok", text: t.settings.savedTo(path) }))
+                        .catch((e) => {
+                          console.error("export failed", e);
+                          setStatus({ tone: "error", text: `${t.errors.exportSettings}: ${e}` });
+                        })
+                    }
+                  >
+                    {t.settings.export}
+                  </button>
+                  <button className="aero-button" onClick={() => importRef.current?.click()}>
+                    {t.settings.import}
+                  </button>
+                  <input
+                    ref={importRef}
+                    type="file"
+                    accept=".json"
+                    hidden
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) doImport(f);
+                      e.target.value = "";
+                    }}
+                  />
+                </div>
               </div>
-              <p className="settings-note settings-path">{storage.dataDir}</p>
+              <div className="ctl-row">
+                <CtlLabel label={t.settings.quitLabel} hint={t.settings.quitHint} />
+                <div className="ctl-actions">
+                  <button
+                    className="aero-button aero-button-danger"
+                    onClick={() =>
+                      ipc
+                        .quitApp()
+                        .catch((e) =>
+                          setStatus({ tone: "error", text: `${t.errors.quit}: ${e}` }),
+                        )
+                    }
+                  >
+                    {t.settings.quit}
+                  </button>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {section === "dock" && (
+            <>
+              <section className="settings-card">
+                <AeroSegmented<DockEdge>
+                  label={t.settings.position}
+                  value={dock.edge}
+                  options={[
+                    { value: "bottom", label: t.settings.bottom },
+                    { value: "top", label: t.settings.top },
+                    { value: "left", label: t.settings.left },
+                    { value: "right", label: t.settings.right },
+                  ]}
+                  onChange={(edge) => set((d) => void (d.dock.edge = edge))}
+                />
+                {monitors.length > 1 && (
+                  <AeroSegmented<string>
+                    label={t.settings.monitor}
+                    value={dock.monitor ?? ""}
+                    options={monitors.map((m) => ({
+                      value: m.isPrimary ? "" : m.name,
+                      label: `${m.name.replace(/^\\\\\.\\/, "")}${m.isPrimary ? t.settings.primary : ""}`,
+                    }))}
+                    onChange={(name) => set((d) => void (d.dock.monitor = name || null))}
+                  />
+                )}
+                <AeroSlider
+                  label={t.settings.iconSize}
+                  value={dock.iconSize}
+                  min={32}
+                  max={80}
+                  step={2}
+                  format={(v) => `${v}px`}
+                  onChange={(v) => set((d) => void (d.dock.iconSize = v))}
+                />
+                <AeroToggle
+                  label={t.settings.magnification}
+                  checked={dock.magnification}
+                  onChange={(v) => set((d) => void (d.dock.magnification = v))}
+                />
+                {dock.magnification && (
+                  <AeroSlider
+                    label={t.settings.magnificationAmount}
+                    value={dock.magnificationScale}
+                    min={1.1}
+                    max={1.9}
+                    step={0.05}
+                    format={(v) => `${Math.round((v - 1) * 100)}%`}
+                    onChange={(v) => set((d) => void (d.dock.magnificationScale = v))}
+                  />
+                )}
+                <AeroToggle
+                  label={t.settings.floating}
+                  checked={dock.floating}
+                  onChange={(v) => set((d) => void (d.dock.floating = v))}
+                />
+                <AeroToggle
+                  label={t.settings.showRunning}
+                  checked={dock.showRunningApps}
+                  onChange={(v) => set((d) => void (d.dock.showRunningApps = v))}
+                />
+                <AeroToggle
+                  label={t.settings.autoHide}
+                  checked={dock.autoHide}
+                  hint={t.settings.autoHideHint}
+                  onChange={(v) => set((d) => void (d.dock.autoHide = v))}
+                />
+                {dock.autoHide && (
+                  <AeroSlider
+                    label={t.settings.hideAfter}
+                    value={dock.autoHideDelayMs}
+                    min={200}
+                    max={5000}
+                    step={100}
+                    format={(v) =>
+                      v >= 1000 ? t.settings.seconds((v / 1000).toFixed(1)) : `${v}ms`
+                    }
+                    onChange={(v) => set((d) => void (d.dock.autoHideDelayMs = v))}
+                  />
+                )}
+              </section>
+
+              <h2 className="settings-group-title">{t.settings.dockItems}</h2>
+              <section className="settings-card">
+                <AeroToggle
+                  label={t.settings.settingsButton}
+                  checked={dock.showSettingsButton}
+                  onChange={(v) => set((d) => void (d.dock.showSettingsButton = v))}
+                />
+                <AeroToggle
+                  label={t.settings.clock}
+                  checked={dock.showClock}
+                  onChange={(v) => set((d) => void (d.dock.showClock = v))}
+                />
+                <AeroToggle
+                  label={t.settings.status}
+                  checked={dock.showSystemStatus}
+                  onChange={(v) => set((d) => void (d.dock.showSystemStatus = v))}
+                />
+              </section>
             </>
           )}
-          <div className="ctl-row">
-            <span className="ctl-label">Project</span>
-            <div className="ctl-actions">
-              <button className="aero-button" onClick={() => void openLink(REPO_URL)}>
-                View on GitHub
-              </button>
-              <button className="aero-button" onClick={() => void openLink(KOFI_URL)}>
-                Support on Ko-fi
-              </button>
-            </div>
-          </div>
-        </section>
 
-        <footer className="settings-footer">
-          Aero Dock {__APP_VERSION__} — made with light, water, and glass.
-        </footer>
+          {section === "appearance" && (
+            <section className="settings-card">
+              <AeroSegmented<ThemeId>
+                label={t.settings.theme}
+                value={normalizeTheme(appearance.theme)}
+                options={[
+                  { value: "system", label: t.settings.themeSystem },
+                  { value: "light", label: t.settings.themeLight },
+                  { value: "dark", label: t.settings.themeDark },
+                ]}
+                onChange={(v) => set((d) => void (d.appearance.theme = v))}
+              />
+              <div className="ctl-row">
+                <CtlLabel label={t.settings.accent} />
+                <div className="ctl-actions">
+                  <input
+                    type="color"
+                    className="ctl-colour"
+                    aria-label={t.settings.accent}
+                    value={appearance.accent}
+                    onChange={(e) => set((d) => void (d.appearance.accent = e.target.value))}
+                  />
+                </div>
+              </div>
+              <AeroToggle
+                label={t.settings.wallpaperTint}
+                checked={appearance.wallpaperSync}
+                hint={t.settings.wallpaperTintHint}
+                onChange={(v) => set((d) => void (d.appearance.wallpaperSync = v))}
+              />
+              <AeroSlider
+                label={t.settings.dockOpacity}
+                value={appearance.transparency}
+                min={0.3}
+                max={1}
+                format={pctFmt}
+                onChange={(v) => set((d) => void (d.appearance.transparency = v))}
+              />
+              <AeroSlider
+                label={t.settings.animationSpeed}
+                value={appearance.animationSpeed}
+                min={0.5}
+                max={2}
+                format={(v) => `${v.toFixed(2)}×`}
+                onChange={(v) => set((d) => void (d.appearance.animationSpeed = v))}
+              />
+            </section>
+          )}
+
+          {section === "modes" && <ModesCard settings={settings} onStatus={onStatus} />}
+
+          {section === "audio" && <AudioCard />}
+
+          {section === "widgets" && <WidgetsCard settings={settings} onStatus={onStatus} />}
+
+          {section === "about" && (
+            <section className="settings-card">
+              <div className="ctl-row">
+                <CtlLabel label={t.settings.version} />
+                <span className="settings-about-value">Aero Dock {__APP_VERSION__}</span>
+              </div>
+              {storage && (
+                <div className="ctl-row ctl-row-stacked">
+                  <span className="ctl-label">
+                    {t.settings.storage} ({storage.portable ? t.settings.portable : t.settings.installed})
+                  </span>
+                  <span className="settings-note settings-path">{storage.dataDir}</span>
+                </div>
+              )}
+              <div className="ctl-row">
+                <CtlLabel label={t.settings.project} />
+                <div className="ctl-actions">
+                  <button className="aero-button" onClick={() => void openLink(REPO_URL)}>
+                    {t.settings.github}
+                  </button>
+                </div>
+              </div>
+            </section>
+          )}
+        </div>
+
+        {status && (
+          <p className="settings-status" data-tone={status.tone} role="status">
+            {status.text}
+          </p>
+        )}
       </main>
     </div>
   );

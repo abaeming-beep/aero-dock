@@ -17,13 +17,12 @@ export default defineConfig(async () => ({
   },
 
   build: {
-    // The renderer loads from disk, but splitting the two big vendors out
-    // still helps: they parse in parallel with app code and stay
+    // The renderer loads from disk, but splitting the big vendor out
+    // still helps: it parses in parallel with app code and stays
     // byte-identical between releases.
     rollupOptions: {
       output: {
         manualChunks: {
-          pixi: ["pixi.js"],
           react: ["react", "react-dom", "motion/react"],
         },
       },

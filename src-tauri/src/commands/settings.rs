@@ -143,8 +143,8 @@ pub async fn open_settings(app: AppHandle) -> AeroResult<()> {
         "settings",
         tauri::WebviewUrl::App("index.html?window=settings".into()),
     )
-    .title("Aero Dock Settings")
-    .inner_size(820.0, 640.0)
+    .title(crate::i18n::SETTINGS_WINDOW_TITLE)
+    .inner_size(900.0, 640.0)
     .min_inner_size(660.0, 500.0);
 
     // Every WebView2 window sharing a profile has to be created with the

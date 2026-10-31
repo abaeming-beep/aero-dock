@@ -9,15 +9,16 @@
 import { useState } from "react";
 import { WIDGETS } from "../desktop/registry";
 import { ipc } from "../../ipc/commands";
-import type { Settings, SurfaceStyle, WidgetInstance, WidgetKind } from "../../ipc/types";
-import { AeroSegmented, AeroSlider, AeroToggle } from "./controls";
+import type { Settings, WidgetInstance, WidgetKind } from "../../ipc/types";
+import { t } from "../../i18n";
+import { AeroSegmented, AeroSlider, AeroToggle, CtlLabel } from "./controls";
 
 interface Props {
   settings: Settings;
   onStatus: (tone: "ok" | "error", text: string) => void;
 }
 
-const DEFAULT_ACCENT = "#2f9de3";
+const DEFAULT_ACCENT = "#2563eb";
 
 function WidgetRow({
   widget,
@@ -32,7 +33,7 @@ function WidgetRow({
   const def = WIDGETS.find((w) => w.kind === widget.kind);
   const fail = (what: string) => (e: unknown) => onStatus("error", `${what}: ${e}`);
   const style = (patch: Parameters<typeof ipc.styleWidget>[1]) =>
-    ipc.styleWidget(widget.id, patch).catch(fail("Could not change the widget"));
+    ipc.styleWidget(widget.id, patch).catch(fail(t.errors.changeWidget));
 
   const opts = widget.options;
 
@@ -43,29 +44,19 @@ function WidgetRow({
         <div className="mode-card-title">
           <strong>{def?.label ?? widget.kind}</strong>
           <span className="mode-card-meta">
-            {Math.round(widget.width)} × {Math.round(widget.height)} ·{" "}
-            {widget.surface === "liquid" ? "Liquid" : "Classic"}
-            {widget.locked && " · locked"}
+            {Math.round(widget.width)} × {Math.round(widget.height)}
+            {widget.locked && t.widgets.locked}
           </span>
         </div>
         <button className="aero-button" onClick={() => setOpen((v) => !v)}>
-          {open ? "Done" : "Edit"}
+          {open ? t.common.done : t.common.edit}
         </button>
       </div>
 
       {open && (
         <div className="mode-card-edit">
-          <AeroSegmented<SurfaceStyle>
-            label="Material"
-            value={widget.surface}
-            options={[
-              { value: "aero", label: "Classic" },
-              { value: "liquid", label: "Liquid" },
-            ]}
-            onChange={(v) => void style({ surface: v })}
-          />
           <AeroSlider
-            label="Opacity"
+            label={t.common.opacity}
             value={widget.opacity}
             min={0.3}
             max={1}
@@ -74,28 +65,22 @@ function WidgetRow({
             onChange={(v) => void style({ opacity: v })}
           />
           <div className="ctl-row">
-            <span className="ctl-label">Tint</span>
+            <span className="ctl-label">{t.widgets.tint}</span>
             <div className="ctl-actions">
               <input
                 type="color"
                 className="ctl-colour"
-                aria-label="Widget tint"
+                aria-label={t.widgets.tintAria}
                 value={widget.accent ?? DEFAULT_ACCENT}
                 onChange={(e) => void style({ accent: e.target.value })}
               />
               <button className="aero-button" onClick={() => void style({ accent: null })}>
-                Use theme
+                {t.widgets.useTheme}
               </button>
             </div>
           </div>
           <AeroToggle
-            label="Ambient bubbles"
-            checked={widget.ambient}
-            hint="Also what the Liquid material refracts, since the desktop behind cannot be sampled"
-            onChange={(v) => void style({ ambient: v })}
-          />
-          <AeroToggle
-            label="Lock in place"
+            label={t.widgets.lock}
             checked={widget.locked}
             onChange={(v) => void style({ locked: v })}
           />
@@ -103,21 +88,21 @@ function WidgetRow({
           {widget.kind === "clock" && (
             <>
               <AeroSegmented<string>
-                label="Face"
+                label={t.widgets.face}
                 value={opts.analog ? "analog" : "digital"}
                 options={[
-                  { value: "analog", label: "Analogue" },
-                  { value: "digital", label: "Digital" },
+                  { value: "analog", label: t.widgets.analog },
+                  { value: "digital", label: t.widgets.digital },
                 ]}
                 onChange={(v) => void style({ options: { ...opts, analog: v === "analog" } })}
               />
               <AeroToggle
-                label="Show seconds"
+                label={t.widgets.showSeconds}
                 checked={opts.seconds}
                 onChange={(v) => void style({ options: { ...opts, seconds: v } })}
               />
               <AeroToggle
-                label="24 hour"
+                label={t.widgets.twentyFourHour}
                 checked={opts.twentyFourHour}
                 onChange={(v) => void style({ options: { ...opts, twentyFourHour: v } })}
               />
@@ -127,31 +112,31 @@ function WidgetRow({
           {widget.kind === "weather" && (
             <>
               <AeroSegmented<string>
-                label="Units"
+                label={t.widgets.units}
                 value={opts.celsius ? "c" : "f"}
                 options={[
-                  { value: "c", label: "Celsius" },
-                  { value: "f", label: "Fahrenheit" },
+                  { value: "c", label: t.widgets.celsius },
+                  { value: "f", label: t.widgets.fahrenheit },
                 ]}
                 onChange={(v) => void style({ options: { ...opts, celsius: v === "c" } })}
               />
               <label className="ctl-row">
-                <span className="ctl-label">Place name</span>
+                <span className="ctl-label">{t.widgets.placeName}</span>
                 <input
                   className="ctl-text"
                   defaultValue={opts.place ?? ""}
-                  placeholder="Shown under the temperature"
+                  placeholder={t.widgets.placePlaceholder}
                   onBlur={(e) => void style({ options: { ...opts, place: e.target.value || null } })}
                 />
               </label>
               <div className="ctl-row">
-                <span className="ctl-label">Latitude, longitude</span>
+                <span className="ctl-label">{t.widgets.coordinates}</span>
                 <div className="ctl-actions">
                   <input
                     className="ctl-text ctl-text-short"
                     defaultValue={opts.latitude ?? ""}
                     placeholder="51.5"
-                    aria-label="Latitude"
+                    aria-label={t.widgets.latitude}
                     onBlur={(e) =>
                       void style({
                         options: {
@@ -165,7 +150,7 @@ function WidgetRow({
                     className="ctl-text ctl-text-short"
                     defaultValue={opts.longitude ?? ""}
                     placeholder="-0.13"
-                    aria-label="Longitude"
+                    aria-label={t.widgets.longitude}
                     onBlur={(e) =>
                       void style({
                         options: {
@@ -178,10 +163,7 @@ function WidgetRow({
                 </div>
               </div>
               {!allowWeather && (
-                <p className="settings-note">
-                  Weather stays offline until you allow it below. Nothing is
-                  requested before then.
-                </p>
+                <p className="mode-card-note">{t.widgets.weatherOffline}</p>
               )}
             </>
           )}
@@ -192,11 +174,11 @@ function WidgetRow({
               onClick={() =>
                 ipc
                   .removeWidget(widget.id)
-                  .then(() => onStatus("ok", `Removed the ${def?.label ?? "widget"}.`))
-                  .catch(fail("Could not remove the widget"))
+                  .then(() => onStatus("ok", t.widgets.removed(def?.label)))
+                  .catch(fail(t.errors.removeWidget))
               }
             >
-              Remove
+              {t.widgets.remove}
             </button>
           </div>
         </div>
@@ -208,32 +190,40 @@ function WidgetRow({
 export function WidgetsCard({ settings, onStatus }: Props) {
   const w = settings.widgets;
   const fail = (what: string) => (e: unknown) => onStatus("error", `${what}: ${e}`);
-  const hasWeather = w.widgets.some((x) => x.kind === "weather");
 
   return (
-    <section className="settings-card glass">
-      <h2>Desktop widgets</h2>
+    <>
+      <section className="settings-card">
       <AeroToggle
-        label="Show widgets on the desktop"
+        label={t.widgets.show}
         checked={w.enabled}
-        hint="Draggable glass widgets that sit on the wallpaper"
         onChange={(v) =>
           ipc
             .enableWidgets(v)
             .then(() =>
-              onStatus("ok", v ? "Widgets are on the desktop." : "Widgets are off."),
+              onStatus("ok", v ? t.widgets.on : t.widgets.off),
             )
-            .catch(fail("Could not change widgets"))
+            .catch(fail(t.errors.changeWidgets))
         }
       />
 
       {w.enabled && (
-        <>
-          <p className="settings-note">
-            Drag a widget to move it, and drag its bottom right corner to
-            resize. Everywhere else on the desktop keeps working normally.
-          </p>
+          <AeroToggle
+            label={t.widgets.allowNetwork}
+            checked={w.allowWeatherNetwork}
+            hint={t.widgets.allowNetworkHint}
+            onChange={(v) =>
+              ipc
+                .allowWeatherNetwork(v)
+                .then(() => onStatus("ok", v ? t.widgets.networkOn : t.widgets.networkOff))
+                .catch(fail(t.errors.changeThat))
+            }
+          />
+      )}
+      </section>
 
+      {w.enabled && (
+        <>
           <div className="mode-list">
             {w.widgets.map((widget) => (
               <WidgetRow
@@ -245,8 +235,9 @@ export function WidgetsCard({ settings, onStatus }: Props) {
             ))}
           </div>
 
+          <section className="settings-card">
           <div className="ctl-row ctl-row-stacked">
-            <span className="ctl-label">Add a widget</span>
+            <CtlLabel label={t.widgets.add} />
             <div className="widget-add">
               {WIDGETS.map((def) => (
                 <button
@@ -256,8 +247,8 @@ export function WidgetsCard({ settings, onStatus }: Props) {
                   onClick={() =>
                     ipc
                       .addWidget(def.kind as WidgetKind)
-                      .then(() => onStatus("ok", `Added the ${def.label}.`))
-                      .catch(fail("Could not add the widget"))
+                      .then(() => onStatus("ok", t.widgets.added(def.label)))
+                      .catch(fail(t.errors.addWidget))
                   }
                 >
                   {def.label}
@@ -265,32 +256,9 @@ export function WidgetsCard({ settings, onStatus }: Props) {
               ))}
             </div>
           </div>
-
-          <AeroToggle
-            label="Let the weather widget use the network"
-            checked={w.allowWeatherNetwork}
-            hint="Nothing else in Aero Dock makes any network request"
-            onChange={(v) =>
-              ipc
-                .allowWeatherNetwork(v)
-                .then(() =>
-                  onStatus(
-                    "ok",
-                    v ? "Weather may now fetch conditions." : "Weather is offline again.",
-                  ),
-                )
-                .catch(fail("Could not change that"))
-            }
-          />
-          <p className="settings-note">
-            Weather is the only widget that leaves your machine. With this on
-            it asks Open-Meteo for conditions at the coordinates you set, and
-            sends nothing else. There is no account and no key. Everything
-            else here runs entirely offline
-            {hasWeather ? "." : ", and no weather widget is on the desktop yet."}
-          </p>
+          </section>
         </>
       )}
-    </section>
+    </>
   );
 }

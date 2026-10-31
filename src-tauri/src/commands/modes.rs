@@ -65,7 +65,7 @@ pub fn enable_modes(
 ) -> AeroResult<Settings> {
     store.update(&app, |s| {
         if enabled {
-            s.enable_modes_with_default(new_id(), "Everyday".into());
+            s.enable_modes_with_default(new_id(), crate::i18n::FIRST_MODE_NAME.into());
         } else {
             // keep the mode list, just stop using it, and leave the dock
             // showing whatever is pinned right now

@@ -13,9 +13,10 @@ import { create } from "zustand";
 import { springs } from "../../engine/animation/springs";
 import { ipc } from "../../ipc/commands";
 import type { DockEdge, Settings } from "../../ipc/types";
+import { t } from "../../i18n";
 import { notify } from "../feedback/toastStore";
 // the glyph rules are shared with the settings picker so both ends agree
-import { isPictorial, resolveGlyph } from "../settings/ModeIconPicker";
+import { ModeGlyph } from "../settings/ModeIconPicker";
 import { bloomOffset, flyoutStyle, type MenuAnchor, anchorFor } from "./menuStore";
 import "./modes.css";
 
@@ -45,13 +46,13 @@ function describe(report: {
 }): string {
   const bits: string[] = [];
   if (report.windowsMoved > 0) {
-    bits.push(`${report.windowsMoved} window${report.windowsMoved === 1 ? "" : "s"} placed`);
+    bits.push(t.modes.report.windows(report.windowsMoved));
   }
   if (report.appsLaunched > 0) {
-    bits.push(`${report.appsLaunched} app${report.appsLaunched === 1 ? "" : "s"} opened`);
+    bits.push(t.modes.report.apps(report.appsLaunched));
   }
   if (report.audioApplied > 0) {
-    bits.push("volumes set");
+    bits.push(t.modes.report.volumes);
   }
   return bits.length > 0 ? `${report.modeName}: ${bits.join(", ")}` : report.modeName;
 }
@@ -90,7 +91,7 @@ export function ModeSwitcher({ settings, edge }: { settings: Settings; edge: Doc
     ipc
       .switchMode(id)
       .then((report) => notify.info(describe(report)))
-      .catch(notify.on("Could not switch mode"))
+      .catch(notify.on(t.errors.switchMode))
       .finally(() => setBusy(false));
   };
 
@@ -100,33 +101,30 @@ export function ModeSwitcher({ settings, edge }: { settings: Settings; edge: Doc
         ref={ref}
         className="mode-tile"
         data-busy={busy}
-        aria-label={`Mode: ${active?.name ?? "none"}`}
+        aria-label={t.modes.tile(active?.name ?? t.modes.none)}
         aria-expanded={open}
-        title={active ? `Mode: ${active.name}` : "Modes"}
+        title={active ? t.modes.tile(active.name) : t.modes.heading}
         onClick={() => {
           const el = ref.current;
           setOpen(!open, el ? anchorFor(el) : null);
         }}
       >
-        <span
-          className="mode-tile-glyph"
-          data-emoji={active ? isPictorial(resolveGlyph(active.name, active.glyph)) : false}
-        >
-          {active ? resolveGlyph(active.name, active.glyph) : "M"}
+        <span className="mode-tile-glyph">
+          {active ? <ModeGlyph name={active.name} glyph={active.glyph} /> : "M"}
         </span>
       </button>
 
       <AnimatePresence>
         {open && anchor && (
           <motion.div
-            className="mode-flyout glass"
+            className="mode-flyout surface"
             style={flyoutStyle(edge, anchor, MODE_FLYOUT_WIDTH, 12, MODE_FLYOUT_HEIGHT)}
-            initial={{ opacity: 0, scale: 0.86, ...bloomOffset(edge) }}
+            initial={{ opacity: 0, scale: 0.97, ...bloomOffset(edge) }}
             animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
-            exit={{ opacity: 0, scale: 0.94, filter: "blur(6px)", transition: { duration: 0.16 } }}
+            exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.12 } }}
             transition={springs.bloom}
           >
-            <div className="mode-flyout-title">Modes</div>
+            <div className="mode-flyout-title">{t.modes.heading}</div>
             {settings.modes.modes.map((mode) => (
               <button
                 key={mode.id}
@@ -134,43 +132,40 @@ export function ModeSwitcher({ settings, edge }: { settings: Settings; edge: Doc
                 data-active={mode.id === settings.modes.activeId}
                 onClick={() => switchTo(mode.id)}
               >
-                <span
-                  className="mode-row-glyph"
-                  data-emoji={isPictorial(resolveGlyph(mode.name, mode.glyph))}
-                >
-                  {resolveGlyph(mode.name, mode.glyph)}
+                <span className="mode-row-glyph">
+                  <ModeGlyph name={mode.name} glyph={mode.glyph} size={14} />
                 </span>
                 <span className="mode-row-body">
                   <span className="mode-row-name">{mode.name}</span>
                   <span className="mode-row-meta">
-                    {mode.pinned.length} pinned
+                    {t.modes.flyoutMeta(mode.pinned.length)}
                     {mode.workspace.windows.length > 0 &&
-                      ` · ${mode.workspace.windows.length} windows`}
+                      t.modes.flyoutWindows(mode.workspace.windows.length)}
                   </span>
                 </span>
               </button>
             ))}
             <div className="mode-flyout-separator" />
             <button
-              className="mode-row mode-row-plain"
+              className="mode-row"
               onClick={() => {
                 ipc
                   .captureWorkspace()
-                  .then(() => notify.info(`Saved this desktop to ${active?.name ?? "the mode"}`))
-                  .catch(notify.on("Could not save the workspace"));
+                  .then(() => notify.info(t.modes.savedDesktop(active?.name)))
+                  .catch(notify.on(t.errors.saveWorkspace));
                 setOpen(false);
               }}
             >
-              Save windows to this mode
+              {t.modes.saveToMode}
             </button>
             <button
-              className="mode-row mode-row-plain"
+              className="mode-row"
               onClick={() => {
-                ipc.openSettings().catch(notify.on("Could not open settings"));
+                ipc.openSettings().catch(notify.on(t.errors.openSettings));
                 setOpen(false);
               }}
             >
-              Manage modes…
+              {t.modes.manage}
             </button>
           </motion.div>
         )}

@@ -1,36 +1,15 @@
-/**
- * The shell every widget sits in: glass, drag, resize, and the ambient
- * layer underneath.
- *
- * The widget is built in three layers, which is what lets Liquid actually
- * refract out here. The overlay window is transparent, so a backdrop
- * filter has no desktop pixels to bend, exactly like the dock. What it
- * does have is the widget's own ambient layer: bubbles painted at the
- * back, the glass panel above them, and the content on top. The glass
- * bends its own bubbles, so the material reads as glass on the desktop
- * without needing anything from behind the window.
- *
- * The bubbles hold still on purpose. Anything moving behind a refracting
- * panel forces it to redraw every frame, which is the one way this gets
- * expensive.
- */
+/** The shell every widget sits in: panel, drag and resize. */
 
-import { useCallback, useMemo, useRef } from "react";
-import { glassBackdrop } from "../../engine/glass/displacement";
+import { GripHorizontal } from "lucide-react";
+import { useCallback, useRef } from "react";
 import { ipc } from "../../ipc/commands";
+import { t } from "../../i18n";
 import type { WidgetInstance } from "../../ipc/types";
 import { definitionFor } from "./registry";
 
 /** Corner radius of a widget, shared with the hit region so the clickable
- *  area matches the glass rather than clipping square corners. */
-export const WIDGET_RADIUS = 20;
-
-/** Refraction settings, a little softer than the settings window because
- *  a widget is smaller and the rim would otherwise dominate it. */
-const DEPTH = 7;
-const STRENGTH = 52;
-const ABERRATION = 3;
-const BLUR = 3;
+ *  area matches the panel rather than clipping square corners. */
+export const WIDGET_RADIUS = 14;
 
 /** Matches MAX_SIZE in core/widgets.rs. Clamping here too means a resize
  *  stops at the limit instead of snapping back after it is saved. */
@@ -54,23 +33,6 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), h
 export function WidgetFrame({ widget, allowNetwork, onGeometry, onDragState, editing }: Props) {
   const def = definitionFor(widget.kind);
   const mode = useRef<Mode | null>(null);
-
-  // The filter is keyed on size, so it is only rebuilt when the widget is
-  // actually resized rather than on every render.
-  const backdrop = useMemo(() => {
-    if (widget.surface !== "liquid") return undefined;
-    return glassBackdrop(
-      {
-        width: Math.round(widget.width),
-        height: Math.round(widget.height),
-        radius: WIDGET_RADIUS,
-        depth: DEPTH,
-        strength: STRENGTH,
-        chromaticAberration: ABERRATION,
-      },
-      BLUR,
-    );
-  }, [widget.surface, widget.width, widget.height]);
 
   const begin = useCallback(
     (e: React.PointerEvent, kind: "move" | "resize") => {
@@ -146,7 +108,6 @@ export function WidgetFrame({ widget, allowNetwork, onGeometry, onDragState, edi
   return (
     <div
       className="aero-widget"
-      data-surface={widget.surface}
       data-editing={editing}
       data-locked={widget.locked}
       style={{
@@ -156,23 +117,14 @@ export function WidgetFrame({ widget, allowNetwork, onGeometry, onDragState, edi
         height: widget.height,
         opacity: widget.opacity,
         // a per-widget tint overrides the theme accent for its own subtree
-        ...(widget.accent ? ({ "--aero-accent": widget.accent } as React.CSSProperties) : {}),
+        ...(widget.accent ? ({ "--accent": widget.accent } as React.CSSProperties) : {}),
       }}
       onPointerDown={(e) => begin(e, "move")}
       onPointerMove={move}
       onPointerUp={end}
       onPointerCancel={end}
     >
-      {widget.ambient && (
-        <span className="aero-widget-ambient" aria-hidden>
-          <i style={{ left: "10%", top: "16%", width: "22%", aspectRatio: "1" }} />
-          <i style={{ left: "58%", top: "6%", width: "30%", aspectRatio: "1" }} />
-          <i style={{ left: "34%", top: "56%", width: "40%", aspectRatio: "1" }} />
-          <i style={{ left: "80%", top: "62%", width: "16%", aspectRatio: "1" }} />
-        </span>
-      )}
-
-      <div className="aero-widget-glass glass" style={backdrop ? { backdropFilter: backdrop } : undefined}>
+      <div className="aero-widget-panel surface">
         <div className="aero-widget-body">
           {Body ? <Body widget={widget} allowNetwork={allowNetwork} /> : null}
         </div>
@@ -181,12 +133,14 @@ export function WidgetFrame({ widget, allowNetwork, onGeometry, onDragState, edi
       {editing && !widget.locked && (
         <span
           className="aero-widget-resize"
-          title="Drag to resize"
+          title={t.widgets.resize}
           onPointerDown={(e) => begin(e, "resize")}
           onPointerMove={move}
           onPointerUp={end}
           onPointerCancel={end}
-        />
+        >
+          <GripHorizontal size={12} aria-hidden style={{ rotate: "-45deg" }} />
+        </span>
       )}
     </div>
   );

@@ -9,4 +9,3 @@
 
 export const REPO_URL = "https://github.com/TheAgencyMGE/aero-dock";
 export const ISSUES_URL = "https://github.com/TheAgencyMGE/aero-dock/issues";
-export const KOFI_URL = "https://ko-fi.com/theagencymge";

@@ -19,32 +19,20 @@ export interface DockSettings {
   floatingMargin: number;
   showRunningApps: boolean;
   /** Built-in dock controls, each independently hideable. */
-  showSearchButton: boolean;
   showSettingsButton: boolean;
   showClock: boolean;
-  /** Battery, network, volume and Recycle Bin glyphs. */
+  /** Battery and Recycle Bin glyphs. */
   showSystemStatus: boolean;
 }
 
-/** How a surface is rendered. Both are Frutiger Aero; they differ in how
- *  thick the material reads. "aero" is the glossy beveled panel, "liquid"
- *  keeps the palette but renders as a thin lens. */
-export type SurfaceStyle = "aero" | "liquid";
-
 export interface AppearanceSettings {
+  /** system | light | dark. Older files may name a retired theme. */
   theme: string;
+  /** Accent colour as #rrggbb. */
+  accent: string;
   transparency: number;
-  glassIntensity: number;
-  bloomAmount: number;
-  reflectionStrength: number;
-  particleDensity: number;
-  scene: string;
   animationSpeed: number;
   wallpaperSync: boolean;
-  /** Material for the dock, its flyouts and its controls. */
-  dockSurface: SurfaceStyle;
-  /** Material for the settings window, independent of the dock. */
-  settingsSurface: SurfaceStyle;
 }
 
 export type PinKind = "app" | "file" | "folder" | "stack";
@@ -133,9 +121,7 @@ export interface WidgetInstance {
   width: number;
   height: number;
   opacity: number;
-  surface: SurfaceStyle;
   accent: string | null;
-  ambient: boolean;
   locked: boolean;
   options: WidgetOptions;
 }
@@ -150,10 +136,8 @@ export interface WidgetsSettings {
 /** Appearance changes, all optional so the UI sends only what changed. */
 export interface WidgetStyle {
   opacity?: number;
-  surface?: SurfaceStyle;
   /** null clears the tint back to the theme accent. */
   accent?: string | null;
-  ambient?: boolean;
   locked?: boolean;
   options?: WidgetOptions;
 }

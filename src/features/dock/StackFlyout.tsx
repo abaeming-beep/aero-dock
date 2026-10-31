@@ -2,10 +2,12 @@
  * Stack flyout: a pinned group blooms open into a grid of its members.
  */
 
+import { AppWindow } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect } from "react";
 import { springs } from "../../engine/animation/springs";
 import { ipc } from "../../ipc/commands";
+import { t } from "../../i18n";
 import { notify } from "../feedback/toastStore";
 import type { Settings } from "../../ipc/types";
 import { useDockIcons } from "../../state/dockStore";
@@ -63,11 +65,11 @@ export function StackFlyout({ edge }: StackFlyoutProps) {
     <AnimatePresence>
       {active && item && (
         <motion.div
-          className="folder-flyout glass"
+          className="folder-flyout surface"
           style={style}
-          initial={{ opacity: 0, scale: 0.8, ...from }}
+          initial={{ opacity: 0, scale: 0.97, ...from }}
           animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
-          exit={{ opacity: 0, scale: 0.92, filter: "blur(6px)", transition: { duration: 0.16 } }}
+          exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.12 } }}
           transition={springs.bloom}
         >
           <div className="folder-flyout-header">
@@ -81,11 +83,11 @@ export function StackFlyout({ edge }: StackFlyoutProps) {
               <motion.button
                 key={child.id}
                 className="folder-flyout-item"
-                initial={{ opacity: 0, y: 10, scale: 0.85 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ ...springs.bloom, delay: Math.min(i * 0.025, 0.3) }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.12, delay: Math.min(i * 0.01, 0.12) }}
                 onClick={() => {
-                  ipc.launch(child.path).catch(notify.on(`Could not open ${child.name}`));
+                  ipc.launch(child.path).catch(notify.on(t.errors.open(child.name)));
                   close();
                 }}
                 title={child.name}
@@ -93,7 +95,9 @@ export function StackFlyout({ edge }: StackFlyoutProps) {
                 {iconUrls[child.path] ? (
                   <img src={iconUrls[child.path]} alt="" draggable={false} />
                 ) : (
-                  <span className="folder-flyout-glyph">▶</span>
+                  <span className="folder-flyout-glyph">
+                    <AppWindow size={28} aria-hidden />
+                  </span>
                 )}
                 <span className="folder-flyout-name">{child.name}</span>
               </motion.button>

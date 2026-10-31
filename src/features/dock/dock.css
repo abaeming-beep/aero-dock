@@ -14,19 +14,44 @@
   align-items: flex-start;
 }
 
-/* idle sleep: ambient motion pauses so the GPU can rest */
-.dock-viewport[data-asleep="true"] .dock-icon-float,
-.dock-viewport[data-asleep="true"] .glass::after,
-.dock-viewport[data-asleep="true"] .glass-sweep::after {
-  animation-play-state: paused;
-}
 .dock-viewport[data-edge="left"] {
   align-items: center;
   justify-content: flex-start;
 }
+
 .dock-viewport[data-edge="right"] {
   align-items: center;
   justify-content: flex-end;
+}
+
+.dock-control-btn {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  align-self: center;
+  margin-right: 2px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 3;
+  color: var(--text-muted);
+  transition:
+    background calc(0.12s / var(--anim-speed)) ease,
+    color calc(0.12s / var(--anim-speed)) ease;
+}
+
+.dock-control-btn:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.dock-control-btn:active {
+  background: var(--pressed);
 }
 
 .dock-bar {
@@ -34,7 +59,12 @@
   align-items: flex-end;
   gap: var(--icon-gap);
   padding: var(--dock-pad-y) var(--dock-pad-x);
-  opacity: var(--dock-opacity);
+  /* the setting fades the panel, never the app icons sitting on it */
+  background: color-mix(
+    in srgb,
+    var(--surface) calc(var(--dock-opacity) * 100%),
+    transparent
+  );
 }
 
 .dock-bar[data-vertical="true"] {
@@ -63,54 +93,36 @@
   align-items: center;
 }
 
-/* glass ridge separating pinned apps from running-only apps */
+/* separates pinned apps from running-only apps */
 .dock-divider {
   align-self: stretch;
-  width: 2px;
-  margin: 4px 3px;
-  border-radius: 1px;
-  background: linear-gradient(
-    180deg,
-    transparent,
-    rgba(255, 255, 255, 0.55) 30%,
-    rgba(20, 80, 130, 0.35) 70%,
-    transparent
-  );
-  box-shadow: 1px 0 0 rgba(255, 255, 255, 0.25);
+  width: 1px;
+  margin: 6px 3px;
+  background: var(--border);
 }
 
 .dock-bar[data-vertical="true"] .dock-divider {
   width: auto;
-  height: 2px;
-  align-self: stretch;
-  margin: 3px 4px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.55) 30%,
-    rgba(20, 80, 130, 0.35) 70%,
-    transparent
-  );
+  height: 1px;
+  margin: 3px 6px;
 }
 
-/* running indicator: a tiny glowing droplet under the icon */
+/* running indicator: a dot, stretched to a bar for the focused window */
 .dock-indicator {
   position: absolute;
-  bottom: -7px;
+  bottom: -6px;
   left: 50%;
   transform: translateX(-50%);
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #ffffff, var(--aero-life) 55%, #3f8f1d);
-  box-shadow: 0 0 6px 1px rgba(122, 208, 58, 0.8);
+  width: 4px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--text-muted);
   pointer-events: none;
 }
 
 .dock-indicator[data-focused="true"] {
-  width: 7px;
-  height: 7px;
-  box-shadow: 0 0 10px 2px rgba(122, 208, 58, 0.95);
+  width: 14px;
+  background: var(--accent);
 }
 
 /* ---- icons ---- */
@@ -134,29 +146,10 @@
   transform-origin: center center;
 }
 
-/* idle float: compositor-only transform animation, phase-offset per icon */
-.dock-icon-float {
+.dock-icon-face {
   display: block;
   width: 100%;
   height: 100%;
-  animation: icon-float 5.2s ease-in-out infinite;
-  will-change: transform;
-}
-
-@keyframes icon-float {
-  0%,
-  100% {
-    transform: translateY(1.6px);
-  }
-  50% {
-    transform: translateY(-1.6px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .dock-icon-float {
-    animation: none;
-  }
 }
 
 .dock-icon img,
@@ -167,16 +160,9 @@
      source that slips through must letterbox rather than stretch when
      the dock size changes. */
   object-fit: contain;
-  filter: var(--shadow-icon);
-  -webkit-box-reflect: below 2px
-    linear-gradient(
-      transparent,
-      transparent 55%,
-      rgba(255, 255, 255, calc(0.45 * var(--reflection-strength)))
-    );
 }
 
-/* stack: a glass tile holding a 2x2 mosaic of its members */
+/* stack: a tile holding a 2x2 mosaic of its members */
 .dock-stack {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -184,28 +170,20 @@
   width: 100%;
   height: 100%;
   padding: 9%;
-  box-sizing: border-box;
   border-radius: 22%;
-  background: linear-gradient(
-    160deg,
-    rgba(255, 255, 255, 0.55),
-    rgba(180, 225, 250, 0.25) 55%,
-    rgba(120, 190, 235, 0.35)
-  );
-  border: 1px solid rgba(255, 255, 255, 0.65);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 2px 5px rgba(10, 45, 80, 0.35);
+  background: var(--hover);
+  border: 1px solid var(--border);
 }
 
 .dock-stack img {
   width: 100% !important;
   height: 100% !important;
   object-fit: contain;
-  -webkit-box-reflect: none !important;
 }
 
 .dock-stack-slot {
   border-radius: 20%;
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--hover);
 }
 
 /* fallback glyph when an icon can't be extracted */
@@ -214,33 +192,15 @@
   align-items: center;
   justify-content: center;
   border-radius: 22%;
-  background: linear-gradient(160deg, var(--aero-accent), var(--aero-accent-deep));
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-contrast);
   font-weight: 600;
   font-size: calc(var(--icon-size) * 0.42);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
-/* hover bloom: soft radial light behind the icon */
-.dock-icon::before {
-  content: "";
-  position: absolute;
-  inset: -30%;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--bloom-color) 0%, var(--bloom-soft) 40%, transparent 70%);
-  opacity: 0;
-  transition: opacity calc(0.35s / var(--anim-speed)) ease;
-  pointer-events: none;
-  z-index: -1;
-}
+/* ---- tooltip label ---- */
 
-.dock-icon:hover::before {
-  opacity: calc(0.9 * var(--bloom-amount));
-}
-
-/* ---- tooltip label: tiny glass pill ---- */
-
-/* Centering rides on `translate`, never `transform` — motion writes an
+/* Centering rides on `translate`, never `transform`: motion writes an
    inline transform for the entrance and would drop a CSS one. */
 .dock-label {
   position: absolute;
@@ -250,21 +210,15 @@
   max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding: 4px 12px;
-  border-radius: 10px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
   white-space: nowrap;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--aero-text-on-glass);
-  text-shadow: 0 1px 4px rgba(10, 45, 80, 0.8);
-  background: linear-gradient(
-    180deg,
-    rgba(90, 160, 215, 0.75),
-    rgba(25, 90, 150, 0.82)
-  );
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  box-shadow: 0 4px 14px rgba(10, 45, 80, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(8px);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
   pointer-events: none;
   z-index: 10;
 }
@@ -274,7 +228,7 @@
   top: calc(100% + 14px);
 }
 
-/* vertical docks put the pill beside the icon instead of above it */
+/* vertical docks put the label beside the icon instead of above it */
 .dock-label[data-edge="left"],
 .dock-label[data-edge="right"] {
   bottom: auto;
@@ -294,13 +248,13 @@
 
 /* ---- per-app volume ---------------------------------------------- */
 
-/* The volume readout borrows the tooltip pill so the two never fight
-   for the same space: while you are scrolling, this replaces the name. */
+/* The volume readout borrows the tooltip so the two never fight for the
+   same space: while you are scrolling, this replaces the name. */
 .dock-volume-pill {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 5px 11px 7px;
+  padding: 5px 11px 8px;
   min-width: 104px;
   /* Clears the running indicator and mute badge inside the tile. It
      cannot outrank the flyouts, which live in a different stacking
@@ -312,13 +266,10 @@
   width: 14px;
   height: 14px;
   flex: 0 0 auto;
-  color: var(--aero-text-on-glass);
-  overflow: visible;
 }
 
 .dock-volume-value {
   font-variant-numeric: tabular-nums;
-  font-size: 12px;
   min-width: 38px;
 }
 
@@ -327,19 +278,16 @@
   left: 10px;
   right: 10px;
   bottom: 4px;
-  height: 3px;
-  border-radius: 3px;
-  background: rgba(6, 34, 62, 0.45);
-  box-shadow: inset 0 1px 2px rgba(4, 24, 46, 0.55);
+  height: 2px;
+  border-radius: 1px;
+  background: var(--border);
   overflow: hidden;
 }
 
 .dock-volume-fill {
   display: block;
   height: 100%;
-  border-radius: 3px;
-  background: linear-gradient(90deg, #d9f4ff, var(--aero-accent) 60%, #7ad03a);
-  box-shadow: 0 0 6px rgba(160, 225, 255, 0.7);
+  background: var(--accent);
   transition: width 90ms ease-out;
 }
 
@@ -349,15 +297,13 @@
   position: absolute;
   top: -2px;
   right: -2px;
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  color: #fff;
-  background: linear-gradient(180deg, rgba(230, 96, 96, 0.95), rgba(160, 32, 32, 0.95));
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  box-shadow: 0 2px 6px rgba(10, 30, 60, 0.5);
+  color: #ffffff;
+  background: var(--danger);
   pointer-events: none;
 }
 

@@ -33,10 +33,9 @@ export function DesktopWidgets() {
     hydrate();
   }, [hydrate]);
 
-  // The overlay carries no material of its own; each widget picks one. It
-  // still needs the theme tokens, so it borrows the dock's appearance.
+  // The overlay paints nothing itself, but its widgets read the tokens.
   useEffect(() => {
-    if (settings) applyAppearance(settings, null, "dock");
+    if (settings) applyAppearance(settings);
   }, [settings]);
 
   const stored = useMemo(() => settings?.widgets.widgets ?? [], [settings]);

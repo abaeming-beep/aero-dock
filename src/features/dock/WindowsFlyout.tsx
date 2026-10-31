@@ -1,14 +1,16 @@
 /**
  * Window previews: hover (or click) an app with open windows and a
- * glass shelf rises with LIVE miniatures of each window — real DWM
- * thumbnails composited by Windows into our dock window, zero-copy.
- * Click a preview to focus that window; ✕ closes it.
+ * panel opens with LIVE miniatures of each window: real DWM thumbnails
+ * composited by Windows into our dock window, zero-copy. Click a preview
+ * to focus that window; the X closes it.
  */
 
+import { X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { springs } from "../../engine/animation/springs";
 import { ipc } from "../../ipc/commands";
+import { t } from "../../i18n";
 import { notify } from "../feedback/toastStore";
 import type { Settings } from "../../ipc/types";
 import { targetKey, useRunning, windowKey } from "../../state/runningStore";
@@ -67,7 +69,7 @@ export function WindowsFlyout({ edge }: WindowsFlyoutProps) {
   // tear down live previews whenever the flyout goes away; the second,
   // delayed hide catches anything a straggling animation callback
   // re-registered after the first (DWM draws over our DOM, so a leaked
-  // thumbnail floats with no glass behind it)
+  // thumbnail floats with no panel behind it)
   useEffect(() => {
     if (!active) return;
     return () => {
@@ -127,11 +129,11 @@ export function WindowsFlyout({ edge }: WindowsFlyoutProps) {
     <AnimatePresence>
       {active && item && (
         <motion.div
-          className="windows-flyout glass"
+          className="windows-flyout surface"
           style={style}
-          initial={{ opacity: 0, scale: 0.84, ...from }}
+          initial={{ opacity: 0, scale: 0.97, ...from }}
           animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
-          exit={{ opacity: 0, scale: 0.93, transition: { duration: 0.15 } }}
+          exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.12 } }}
           transition={springs.bloom}
           onAnimationComplete={(definition) => {
             // fires for BOTH enter and exit — only place thumbnails when
@@ -158,7 +160,7 @@ export function WindowsFlyout({ edge }: WindowsFlyoutProps) {
                     else slotRefs.current.delete(w.hwnd);
                   }}
                   onClick={() => {
-                    ipc.activateWindow(w.hwnd).catch(notify.on("Could not focus that window"));
+                    ipc.activateWindow(w.hwnd).catch(notify.on(t.errors.focusWindow));
                     close();
                   }}
                   title={w.title}
@@ -167,10 +169,10 @@ export function WindowsFlyout({ edge }: WindowsFlyoutProps) {
                   <span className="windows-preview-title">{w.title}</span>
                   <button
                     className="windows-flyout-close"
-                    title="Close window"
-                    onClick={() => ipc.closeWindow(w.hwnd).catch(notify.on("Could not close that window"))}
+                    title={t.dock.menu.closeWindow}
+                    onClick={() => ipc.closeWindow(w.hwnd).catch(notify.on(t.errors.closeWindow))}
                   >
-                    ✕
+                    <X size={13} aria-hidden />
                   </button>
                 </div>
               </div>

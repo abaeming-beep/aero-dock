@@ -1,5 +1,5 @@
 /**
- * The dock bar: a glass shelf of icons. Owns the cursor motion value the
+ * The dock bar: a shelf of icons. Owns the cursor motion value the
  * icons magnify against, drag-reordering of the pinned section, and the
  * deterministic window-size report to Rust (window = dock + magnification
  * headroom + tooltip space + flyout space when a menu is open).
@@ -9,17 +9,16 @@ import { AnimatePresence, motion, Reorder, useMotionValue } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { springs } from "../../engine/animation/springs";
 import { ipc } from "../../ipc/commands";
+import { t } from "../../i18n";
 import { Toasts } from "../feedback/Toasts";
 import { notify, useToasts } from "../feedback/toastStore";
 import type { Settings } from "../../ipc/types";
 import type { DockItemView } from "../../state/dockStore";
-import { useAmbient } from "../../state/ambientStore";
 import { useFileDrag } from "../../state/dragStore";
 import { Welcome } from "../onboarding/Welcome";
-import { SEARCH_PANEL, SearchOverlay, useSearch } from "../search/SearchOverlay";
 import { WidgetCluster } from "../widgets/WidgetCluster";
 import { ContextMenu } from "./ContextMenu";
-import { SearchButton, SettingsButton } from "./DockControls";
+import { SettingsButton } from "./DockControls";
 import { MODE_FLYOUT_HEIGHT, ModeSwitcher, useModeSwitcher } from "./ModeSwitcher";
 import { DockIcon } from "./DockIcon";
 import { FolderFlyout } from "./FolderFlyout";
@@ -37,13 +36,13 @@ const EDGE_SLACK = 24; // window slack so magnified end-icons never clip
 const MENU_SPACE = 360; // extra cross-axis room while a context menu is open
 const FLYOUT_GAP = 16; // breathing room between a flyout and the window edge
 const TOAST_SPACE = 210; // extra cross-axis room while toasts are on screen
-const WIDGET_SPACE = 190; // clock + status glyphs + search & gear buttons
+const WIDGET_SPACE = 190; // clock + status glyphs + gear button
 const MODE_TILE_SPACE = 38; // the Modes tile, when Modes is switched on
 const REVEAL_STRIP = 8; // window height while auto-hidden (mouse sensor)
 // fallback only; the real delay is settings.dock.autoHideDelayMs
 const HIDE_ANIM_MS = 380;
-// ambient animations (float, sweep) pause after this much no-interaction
-// so an idle dock costs ~zero GPU; they wake the moment the cursor returns
+// after this much no-interaction the dock hands its memory back; it wakes
+// the moment the cursor returns
 const SLEEP_AFTER_MS = 45_000;
 
 interface DockBarProps {
@@ -76,12 +75,10 @@ export function DockBar({ settings, items, onLaunch }: DockBarProps) {
   }, [order, pinnedItems]);
 
   const peak = magnification ? magnificationScale : 1;
-  const searchOpen = useSearch((s) => s.open);
-  const setSearchOpen = useSearch((s) => s.setOpen);
   const welcomeOpen = !settings.onboardingComplete && pinnedItems.length === 0;
   const modesOpen = useModeSwitcher((m) => m.open);
   const modesOn = settings.modes.enabled && settings.modes.modes.length > 0;
-  const menuOpen = menu.item !== null || searchOpen || welcomeOpen || modesOpen;
+  const menuOpen = menu.item !== null || welcomeOpen || modesOpen;
   // toasts sit in the band above the dock, which is only tall enough for a
   // tooltip — without extra room the window would clip them
   const toastCount = useToasts((s) => s.items.length);
@@ -100,9 +97,8 @@ export function DockBar({ settings, items, onLaunch }: DockBarProps) {
   // A file drag aimed at the dock must not make it slide away.
   const fileDragOver = useFileDrag((s) => s.overDock);
 
-  // ambient-motion sleep: cheap idle, alive on approach
-  const asleep = useAmbient((s) => s.asleep);
-  const setAsleep = useAmbient((s) => s.setAsleep);
+  // idle sleep: cheap when left alone, alive on approach
+  const [asleep, setAsleep] = useState(false);
   const sleepTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => {
     clearTimeout(sleepTimer.current);
@@ -112,7 +108,7 @@ export function DockBar({ settings, items, onLaunch }: DockBarProps) {
     }
     sleepTimer.current = setTimeout(() => setAsleep(true), SLEEP_AFTER_MS);
     return () => clearTimeout(sleepTimer.current);
-  }, [pointerInside, menuOpen, fileDragOver, setAsleep]);
+  }, [pointerInside, menuOpen, fileDragOver]);
 
   // Asleep is also when the dock hands memory back. Chromium keeps its
   // raster caches until told otherwise; on a real desktop this took the
@@ -161,17 +157,12 @@ export function DockBar({ settings, items, onLaunch }: DockBarProps) {
     // The dock band itself: icons at full magnification plus tooltip room.
     const band = iconSize * peak + PAD_CROSS * 2 + label;
     // Open surfaces are taller than the band. Each reports the total cross
-    // size it needs, and the window takes the largest. The search overlay
-    // is measured from its own geometry rather than a shared guess, because
-    // a guess that is too small silently clips its input off the top.
+    // size it needs, and the window takes the largest.
     const crossFull = Math.max(
       band,
       menu.item !== null || welcomeOpen ? band + MENU_SPACE : 0,
       // the mode flyout is taller than the tooltip band it hangs off
       modesOpen ? band + MODE_FLYOUT_HEIGHT + FLYOUT_GAP : 0,
-      searchOpen
-        ? SEARCH_PANEL.offsetFor(iconSize) + SEARCH_PANEL.height + FLYOUT_GAP
-        : 0,
       toastCount > 0 ? band + TOAST_SPACE : 0,
     );
     const cross = windowShrunk ? REVEAL_STRIP : crossFull;
@@ -183,7 +174,6 @@ export function DockBar({ settings, items, onLaunch }: DockBarProps) {
     peak,
     vertical,
     menu.item,
-    searchOpen,
     welcomeOpen,
     toastCount,
     windowShrunk,
@@ -266,25 +256,18 @@ export function DockBar({ settings, items, onLaunch }: DockBarProps) {
     <div
       className="dock-viewport"
       data-edge={edge}
-      data-asleep={asleep}
       onMouseEnter={() => setPointerInside(true)}
       onMouseLeave={() => setPointerInside(false)}
     >
       <motion.div
-        className="dock-bar glass glass-open"
+        className="dock-bar surface surface-open"
         data-vertical={vertical}
         animate={hidden ? { ...slideOut, opacity: 0.6 } : { x: 0, y: 0, opacity: 1 }}
         transition={springs.slide}
         onMouseMove={handleMove}
         onMouseLeave={handleLeave}
       >
-        {/* the bar can't clip itself (tooltips float above it), so the
-            ambient sweep gets its own clipping layer */}
-        <span className="glass-sweep" aria-hidden />
         <ModeSwitcher settings={settings} edge={edge} />
-        {settings.dock.showSearchButton && (
-          <SearchButton onClick={() => setSearchOpen(!searchOpen)} />
-        )}
         <Reorder.Group
           as="div"
           className="dock-section"
@@ -292,7 +275,7 @@ export function DockBar({ settings, items, onLaunch }: DockBarProps) {
           values={order}
           onReorder={setOrder}
         >
-          {orderedPinned.map((item, i) => (
+          {orderedPinned.map((item) => (
             <Reorder.Item
               as="div"
               key={item.id}
@@ -310,7 +293,7 @@ export function DockBar({ settings, items, onLaunch }: DockBarProps) {
                 mouseAxis.set(Infinity);
               }}
               onDragEnd={() => {
-                ipc.reorderPinned(order).catch(notify.on("Could not save the new order"));
+                ipc.reorderPinned(order).catch(notify.on(t.errors.saveOrder));
                 setDragging(false);
                 // let the trailing click event pass before re-enabling launch
                 setTimeout(() => {
@@ -318,13 +301,13 @@ export function DockBar({ settings, items, onLaunch }: DockBarProps) {
                 }, 50);
               }}
             >
-              <DockIcon item={item} index={i} {...iconProps} />
+              <DockIcon item={item} {...iconProps} />
             </Reorder.Item>
           ))}
         </Reorder.Group>
         {runningItems.length > 0 && <span className="dock-divider" aria-hidden />}
-        {runningItems.map((item, i) => (
-          <DockIcon key={item.id} item={item} index={orderedPinned.length + i} {...iconProps} />
+        {runningItems.map((item) => (
+          <DockIcon key={item.id} item={item} {...iconProps} />
         ))}
         {(settings.dock.showClock || settings.dock.showSystemStatus) && (
           <span className="dock-divider" aria-hidden />
@@ -335,7 +318,7 @@ export function DockBar({ settings, items, onLaunch }: DockBarProps) {
         />
         {settings.dock.showSettingsButton && (
           <SettingsButton
-            onClick={() => ipc.openSettings().catch(notify.on("Could not open settings"))}
+            onClick={() => ipc.openSettings().catch(notify.on(t.errors.openSettings))}
           />
         )}
       </motion.div>
@@ -343,7 +326,6 @@ export function DockBar({ settings, items, onLaunch }: DockBarProps) {
       <FolderFlyout edge={edge} />
       <StackFlyout edge={edge} />
       <WindowsFlyout edge={edge} />
-      <SearchOverlay edge={edge} />
       <Toasts edge={edge} />
       <AnimatePresence>{welcomeOpen && <Welcome edge={edge} />}</AnimatePresence>
     </div>

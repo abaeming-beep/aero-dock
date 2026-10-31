@@ -1,6 +1,6 @@
 /**
  * A single dock icon: cursor-distance magnification, hover label,
- * launch bounce, idle float. All motion is springs on transform.
+ * launch nudge. All motion is springs on transform.
  */
 
 import {
@@ -11,9 +11,10 @@ import {
   useTransform,
   type MotionValue,
 } from "motion/react";
+import { Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { springs } from "../../engine/animation/springs";
-import { effectsBus } from "../../engine/effects/effectsBus";
+import { t } from "../../i18n";
 import type { DockEdge } from "../../ipc/types";
 import type { DockItemView } from "../../state/dockStore";
 import { exeKey, useAppAudio } from "../../state/audioStore";
@@ -30,7 +31,6 @@ interface DockIconProps {
   edge: DockEdge;
   /** A reorder drag is in progress somewhere in the dock. */
   dragging: boolean;
-  index: number;
   onLaunch: (item: DockItemView, target?: HTMLElement) => void;
   onContext: (item: DockItemView, target: HTMLElement) => void;
   /** Fired after dwelling on an icon that has open windows. */
@@ -42,34 +42,9 @@ const PREVIEW_DWELL_MS = 550;
  *  indicator's own lifetime so the two never overlap. */
 const VOLUME_PREVIEW_MUTE_MS = 1500;
 
-/** Speaker with the waves dropped when muted, drawn to match the glass
- *  controls rather than a font glyph. */
 function Speaker({ muted }: { muted: boolean }) {
-  return (
-    <svg viewBox="0 0 16 16" className="dock-volume-icon" aria-hidden>
-      <path
-        d="M3.4 6.2h2.2L8.4 3.6v8.8L5.6 9.8H3.4z"
-        fill="currentColor"
-        stroke="currentColor"
-        strokeWidth="1.1"
-        strokeLinejoin="round"
-      />
-      {muted ? (
-        <path
-          d="M10.6 6.2l3.2 3.6M13.8 6.2l-3.2 3.6"
-          stroke="currentColor"
-          strokeWidth="1.4"
-          strokeLinecap="round"
-          fill="none"
-        />
-      ) : (
-        <>
-          <path d="M10.5 5.9a3 3 0 0 1 0 4.2" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round" />
-          <path d="M12.4 4.3a5.6 5.6 0 0 1 0 7.4" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round" />
-        </>
-      )}
-    </svg>
-  );
+  const Icon = muted ? VolumeX : Volume2;
+  return <Icon className="dock-volume-icon" aria-hidden />;
 }
 
 /** Tooltip entrance offset: the pill drifts in from the dock's edge.
@@ -96,7 +71,6 @@ export function DockIcon({
   vertical,
   edge,
   dragging,
-  index,
   onLaunch,
   onContext,
   onHoverPreview,
@@ -145,25 +119,17 @@ export function DockIcon({
     if (dragging) width.jump(iconSize);
   }, [dragging, iconSize, width]);
 
-  // launch bounce (offset perpendicular to the dock edge); idle float
-  // is pure CSS on the inner wrapper — zero JS per frame
+  // launch nudge (offset perpendicular to the dock edge)
   const bounce = useMotionValue(0);
   const y = useTransform(bounce, (b) => (vertical ? 0 : b));
   const x = useTransform(bounce, (b) => (vertical ? b : 0));
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
-      // water-drop bounce away from the edge, then settle
-      animate(bounce, vertical ? -14 : -22, springs.bounce).then(() =>
+      // a small nudge away from the edge, then settle
+      animate(bounce, vertical ? -4 : -6, springs.bounce).then(() =>
         animate(bounce, 0, springs.bounce),
       );
-      const r = e.currentTarget.getBoundingClientRect();
-      const cx = r.left + r.width / 2;
-      const win = { winW: window.innerWidth, winH: window.innerHeight };
-      effectsBus.emit("ripple", { x: cx, y: r.bottom - 4, ...win });
-      if (item.windows.length === 0 && item.kind !== "folder") {
-        effectsBus.emit("burst", { x: cx, y: r.top + r.height / 2, ...win });
-      }
       onLaunch(item, e.currentTarget);
     },
     [bounce, item, onLaunch, vertical],
@@ -238,7 +204,7 @@ export function DockIcon({
         >
           <Speaker muted={audio.muted} />
           <span className="dock-volume-value">
-            {audio.muted ? "Muted" : `${audio.volume}%`}
+            {audio.muted ? t.common.muted : `${audio.volume}%`}
           </span>
           <span className="dock-volume-track" aria-hidden>
             <span
@@ -262,10 +228,7 @@ export function DockIcon({
           </motion.span>
         )
       )}
-      <span
-        className="dock-icon-float"
-        style={{ animationDelay: `${(index * -0.9).toFixed(2)}s` }}
-      >
+      <span className="dock-icon-face">
         {item.kind === "stack" ? (
           <span className="dock-stack">
             {item.children.slice(0, 4).map((child, i) =>
@@ -283,7 +246,7 @@ export function DockIcon({
         )}
       </span>
       {audio?.muted && (
-        <span className="dock-muted-badge" title={`${item.name} is muted`}>
+        <span className="dock-muted-badge" title={t.dock.isMuted(item.name)}>
           <Speaker muted />
         </span>
       )}

@@ -87,7 +87,7 @@ pub async fn open_widget_layer(app: AppHandle) -> AeroResult<()> {
         WIDGETS_LABEL,
         tauri::WebviewUrl::App("index.html?window=widgets".into()),
     )
-    .title("Aero Widgets")
+    .title(crate::i18n::WIDGETS_WINDOW_TITLE)
     .decorations(false)
     .transparent(true)
     .resizable(false)
@@ -349,11 +349,9 @@ where
 #[serde(rename_all = "camelCase")]
 pub struct WidgetStyle {
     pub opacity: Option<f32>,
-    pub surface: Option<crate::core::settings::SurfaceStyle>,
     /// Outer option: was it sent. Inner: clearing the tint back to theme.
     #[serde(default, deserialize_with = "nullable_field")]
     pub accent: Option<Option<String>>,
-    pub ambient: Option<bool>,
     pub locked: Option<bool>,
     pub options: Option<WidgetOptions>,
 }
@@ -372,14 +370,8 @@ pub fn style_widget(
         if let Some(v) = style.opacity {
             w.opacity = v;
         }
-        if let Some(v) = style.surface {
-            w.surface = v;
-        }
         if let Some(v) = style.accent {
             w.accent = v;
-        }
-        if let Some(v) = style.ambient {
-            w.ambient = v;
         }
         if let Some(v) = style.locked {
             w.locked = v;

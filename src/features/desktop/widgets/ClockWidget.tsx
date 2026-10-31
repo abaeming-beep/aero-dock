@@ -1,6 +1,5 @@
 /**
- * Clock. Analogue by default, because a glass face with a sweeping hand
- * is the most Frutiger Aero thing on the desktop.
+ * Clock, analogue or digital.
  *
  * The tick is one timer at the rate actually needed: every second when
  * seconds are shown, otherwise every fifteen, which is enough to land on
@@ -8,6 +7,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { LOCALE, t } from "../../../i18n";
 import type { WidgetProps } from "../registry";
 
 function useNow(everyMs: number): Date {
@@ -38,9 +38,9 @@ export function ClockWidget({ widget }: WidgetProps) {
           {pad(m)}
           {seconds && <span className="w-clock-seconds">{pad(s)}</span>}
         </div>
-        {!twentyFourHour && <div className="w-clock-meridiem">{h < 12 ? "AM" : "PM"}</div>}
+        {!twentyFourHour && <div className="w-clock-meridiem">{h < 12 ? t.widgets.clock.am : t.widgets.clock.pm}</div>}
         <div className="w-clock-date">
-          {now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
+          {now.toLocaleDateString(LOCALE, { weekday: "long", month: "long", day: "numeric" })}
         </div>
       </div>
     );
@@ -55,20 +55,7 @@ export function ClockWidget({ widget }: WidgetProps) {
   return (
     <div className="w-clock-face">
       <svg viewBox="0 0 100 100" className="w-clock-svg" aria-hidden>
-        <defs>
-          <radialGradient id="w-face" cx="38%" cy="30%" r="80%">
-            <stop offset="0%" stopColor="rgba(255,255,255,0.55)" />
-            <stop offset="60%" stopColor="rgba(190,230,255,0.16)" />
-            <stop offset="100%" stopColor="rgba(40,110,170,0.22)" />
-          </radialGradient>
-          <linearGradient id="w-hand" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ffffff" />
-            <stop offset="100%" stopColor="rgba(210,240,255,0.75)" />
-          </linearGradient>
-        </defs>
-
-        <circle cx="50" cy="50" r="47" fill="url(#w-face)" stroke="rgba(255,255,255,0.6)" strokeWidth="1.2" />
-        <circle cx="50" cy="50" r="43" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="0.6" />
+        <circle cx="50" cy="50" r="47" fill="none" stroke="var(--border)" strokeWidth="1.2" />
 
         {Array.from({ length: 12 }, (_, i) => {
           const a = (i * 30 * Math.PI) / 180;
@@ -81,7 +68,7 @@ export function ClockWidget({ widget }: WidgetProps) {
               y1={50 - Math.cos(a) * inner}
               x2={50 + Math.sin(a) * outer}
               y2={50 - Math.cos(a) * outer}
-              stroke="rgba(255,255,255,0.75)"
+              stroke="var(--text-muted)"
               strokeWidth={i % 3 === 0 ? 2 : 1}
               strokeLinecap="round"
             />
@@ -89,18 +76,17 @@ export function ClockWidget({ widget }: WidgetProps) {
         })}
 
         <g transform={`rotate(${hourDeg} 50 50)`}>
-          <line x1="50" y1="52" x2="50" y2="27" stroke="url(#w-hand)" strokeWidth="4.2" strokeLinecap="round" />
+          <line x1="50" y1="52" x2="50" y2="27" stroke="var(--text)" strokeWidth="4.2" strokeLinecap="round" />
         </g>
         <g transform={`rotate(${minDeg} 50 50)`}>
-          <line x1="50" y1="54" x2="50" y2="17" stroke="url(#w-hand)" strokeWidth="2.8" strokeLinecap="round" />
+          <line x1="50" y1="54" x2="50" y2="17" stroke="var(--text)" strokeWidth="2.8" strokeLinecap="round" />
         </g>
         {seconds && (
           <g transform={`rotate(${secDeg} 50 50)`}>
-            <line x1="50" y1="58" x2="50" y2="14" stroke="var(--aero-life, #7ad03a)" strokeWidth="1.3" strokeLinecap="round" />
+            <line x1="50" y1="58" x2="50" y2="14" stroke="var(--accent)" strokeWidth="1.3" strokeLinecap="round" />
           </g>
         )}
-        <circle cx="50" cy="50" r="3.2" fill="#ffffff" />
-        <circle cx="50" cy="50" r="1.4" fill="var(--aero-accent, #2f9de3)" />
+        <circle cx="50" cy="50" r="2.6" fill="var(--text)" />
       </svg>
     </div>
   );

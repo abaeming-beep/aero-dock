@@ -6,8 +6,8 @@
 
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { useEffect, useMemo } from "react";
+import { t } from "../i18n";
 import { DockBar } from "../features/dock/DockBar";
-import { EffectsLayer } from "../engine/effects/EffectsLayer";
 import { applyAppearance } from "../engine/themes/applyTheme";
 import { notify } from "../features/feedback/toastStore";
 import { ipc } from "../ipc/commands";
@@ -56,7 +56,7 @@ export function DockApp() {
           if (cancelled || !report) return;
           // the new settings arrive on their own through
           // `settings://changed`; this only says what happened
-          notify.info(`Switched to ${report.modeName}`);
+          notify.info(t.modes.switchedShort(report.modeName));
         })
         .catch((e) => console.warn("auto mode switch failed", e));
     }, 400);
@@ -99,7 +99,7 @@ export function DockApp() {
             children: [],
           });
         } catch (e) {
-          notify.error(`Could not pin ${path.split("\\").pop()}`, e);
+          notify.error(t.errors.pin(path.split("\\").pop()), e);
         }
       }
     });
@@ -157,25 +157,20 @@ export function DockApp() {
 
   const activate = (item: DockItemView) => {
     if (item.windows.length === 0) {
-      ipc.launch(item.target, item.args).catch(notify.on(`Could not open ${item.name}`));
+      ipc.launch(item.target, item.args).catch(notify.on(t.errors.open(item.name)));
       return;
     }
     // running: focus it; if already focused, cycle windows (or minimize a single one)
     const focusedIdx = item.windows.findIndex((w) => w.hwnd === focused);
     if (focusedIdx === -1) {
-      ipc.activateWindow(item.windows[0].hwnd).catch(notify.on("Could not focus that window"));
+      ipc.activateWindow(item.windows[0].hwnd).catch(notify.on(t.errors.focusWindow));
     } else if (item.windows.length === 1) {
-      ipc.minimizeWindow(item.windows[0].hwnd).catch(notify.on("Could not minimize that window"));
+      ipc.minimizeWindow(item.windows[0].hwnd).catch(notify.on(t.errors.minimizeWindow));
     } else {
       const next = item.windows[(focusedIdx + 1) % item.windows.length];
-      ipc.activateWindow(next.hwnd).catch(notify.on("Could not focus that window"));
+      ipc.activateWindow(next.hwnd).catch(notify.on(t.errors.focusWindow));
     }
   };
 
-  return (
-    <>
-      <EffectsLayer settings={settings} />
-      <DockBar settings={settings} items={items} onLaunch={activate} />
-    </>
-  );
+  return <DockBar settings={settings} items={items} onLaunch={activate} />;
 }

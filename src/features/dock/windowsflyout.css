@@ -1,22 +1,14 @@
-/* Window previews: glass frames around live DWM thumbnails. */
+/* Window previews: frames around live DWM thumbnails. The paddings and gaps
+   here feed the flyout width in WindowsFlyout.tsx, so change them together. */
 
 .windows-flyout {
   padding: 8px 9px 9px;
-  --glass-tint-top: rgba(120, 185, 235, 0.6);
-  --glass-tint-mid: rgba(35, 95, 155, 0.55);
-  --glass-tint-bottom: rgba(18, 60, 110, 0.66);
-  --glass-radius: 14px;
   transform-origin: bottom center;
 }
 
 .windows-flyout-title {
   padding: 2px 6px 7px;
-  font-size: 12px;
-  font-weight: 700;
-  color: rgba(240, 250, 255, 0.9);
-  text-shadow: 0 1px 3px rgba(8, 40, 70, 0.7);
-  position: relative;
-  z-index: 3;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -25,8 +17,6 @@
 .windows-flyout-grid {
   display: grid;
   gap: 8px;
-  position: relative;
-  z-index: 3;
 }
 
 .windows-preview {
@@ -36,23 +26,20 @@
 }
 
 /* the DWM thumbnail is composited INTO this rect by the OS; we draw
-   the frame and leave a dark stage for the live picture */
+   the frame and leave a stage for the live picture */
 .windows-preview-frame {
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  background: rgba(8, 25, 45, 0.55);
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.35);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg);
   cursor: pointer;
 }
 
 .windows-preview[data-focused="true"] .windows-preview-frame {
-  border-color: rgba(150, 240, 190, 0.65);
-  box-shadow: 0 0 10px rgba(122, 208, 58, 0.35), inset 0 0 10px rgba(0, 0, 0, 0.3);
+  border-color: var(--accent);
 }
 
 .windows-preview-frame:hover {
-  border-color: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 0 12px rgba(140, 210, 255, 0.5);
+  border-color: var(--text-muted);
 }
 
 .windows-preview-caption {
@@ -65,10 +52,7 @@
 .windows-preview-title {
   flex: 1;
   min-width: 0;
-  font-size: 11px;
-  font-weight: 500;
-  color: #f2faff;
-  text-shadow: 0 1px 3px rgba(8, 40, 70, 0.7);
+  font-size: var(--fs-small);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -79,16 +63,16 @@
   flex: none;
   width: 20px;
   height: 20px;
-  border: 1px solid transparent;
-  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: var(--radius-sm);
   background: none;
-  color: rgba(240, 250, 255, 0.7);
-  font-size: 10px;
+  color: var(--text-muted);
   cursor: pointer;
 }
 
 .windows-flyout-close:hover {
-  background: linear-gradient(180deg, rgba(255, 170, 160, 0.5), rgba(200, 70, 60, 0.4));
-  border-color: rgba(255, 200, 190, 0.55);
-  color: #fff;
+  background: var(--hover);
+  color: var(--danger);
 }

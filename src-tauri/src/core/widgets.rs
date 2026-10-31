@@ -15,8 +15,6 @@
 
 use serde::{Deserialize, Serialize};
 
-use super::settings::SurfaceStyle;
-
 /// Widgets smaller than this stop being readable; larger than this and a
 /// stray resize can cover the screen.
 pub const MIN_SIZE: u32 = 90;
@@ -116,12 +114,8 @@ pub struct WidgetInstance {
     pub height: u32,
     /// 0.3..=1.0. Below a third the text stops being readable.
     pub opacity: f32,
-    /// Which material the widget is made of, independent of the dock.
-    pub surface: SurfaceStyle,
     /// Hex tint (`#rrggbb`) overriding the theme accent for this widget.
     pub accent: Option<String>,
-    /// Bubbles and light drifting inside the widget.
-    pub ambient: bool,
     /// Pinned in place, so a stray drag cannot move it.
     pub locked: bool,
     pub options: WidgetOptions,
@@ -137,9 +131,7 @@ impl Default for WidgetInstance {
             width: 260,
             height: 260,
             opacity: 0.92,
-            surface: SurfaceStyle::Aero,
             accent: None,
-            ambient: true,
             locked: false,
             options: WidgetOptions::default(),
         }
@@ -440,7 +432,6 @@ mod tests {
     #[test]
     fn a_widget_round_trips_through_json() {
         let w = WidgetInstance {
-            surface: SurfaceStyle::Liquid,
             accent: Some("#7ad03a".into()),
             options: WidgetOptions { analog: false, celsius: false, ..Default::default() },
             ..widget("a")

@@ -53,10 +53,9 @@ pub struct DockSettings {
     /// Show currently running apps that aren't pinned.
     pub show_running_apps: bool,
     /// Built-in dock controls, each independently hideable.
-    pub show_search_button: bool,
     pub show_settings_button: bool,
     pub show_clock: bool,
-    /// Battery, network, volume and Recycle Bin glyphs.
+    /// Battery and Recycle Bin glyphs.
     pub show_system_status: bool,
 }
 
@@ -73,7 +72,6 @@ impl Default for DockSettings {
             floating: true,
             floating_margin: 8,
             show_running_apps: true,
-            show_search_button: true,
             show_settings_button: true,
             show_clock: true,
             show_system_status: true,
@@ -81,64 +79,29 @@ impl Default for DockSettings {
     }
 }
 
-/// How a surface is rendered.
-///
-/// Both are Frutiger Aero; they differ in how thick the material reads.
-/// `Aero` is the glossy, beveled 2000s panel. `Liquid` keeps the same
-/// palette but renders as a thin lens: most of the tint comes out of the
-/// body and the work moves to the rim, where light enters and bends.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum SurfaceStyle {
-    #[default]
-    Aero,
-    Liquid,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct AppearanceSettings {
-    /// Theme id: aero | ocean | forest | aurora | sunset | night.
+    /// Theme id: system | light | dark.
     pub theme: String,
+    /// Accent colour as `#rrggbb`.
+    pub accent: String,
     /// Overall dock opacity, 0.3..=1.0.
     pub transparency: f32,
-    /// Glass blur/refraction intensity, 0.0..=1.0.
-    pub glass_intensity: f32,
-    /// Hover/launch bloom strength, 0.0..=1.0.
-    pub bloom_amount: f32,
-    /// Icon reflection strength, 0.0..=1.0.
-    pub reflection_strength: f32,
-    /// Ambient particle density, 0.0..=1.0 (0 disables particles).
-    pub particle_density: f32,
-    /// Ambient scene: none | dust | rain | snow | bubbles | aurora.
-    pub scene: String,
     /// Global animation speed multiplier, 0.5..=2.0.
     pub animation_speed: f32,
     /// Tint the theme from the wallpaper's dominant color.
     pub wallpaper_sync: bool,
-    /// Material used by the dock, its flyouts and its controls.
-    pub dock_surface: SurfaceStyle,
-    /// Material used by the settings window. Independent of the dock, so
-    /// either window can be glossy while the other is a lens.
-    pub settings_surface: SurfaceStyle,
 }
 
 impl Default for AppearanceSettings {
     fn default() -> Self {
         Self {
-            theme: "aero".into(),
+            theme: "system".into(),
+            accent: "#2563eb".into(),
             transparency: 0.92,
-            glass_intensity: 0.8,
-            bloom_amount: 0.7,
-            reflection_strength: 0.6,
-            particle_density: 0.35,
-            scene: "dust".into(),
             animation_speed: 1.0,
             wallpaper_sync: false,
-            // Both windows keep the look the app has always had, so
-            // upgrading changes nothing on screen. Liquid is opt-in.
-            dock_surface: SurfaceStyle::Aero,
-            settings_surface: SurfaceStyle::Aero,
         }
     }
 }
@@ -307,10 +270,6 @@ impl Settings {
     fn sanitize(&mut self) {
         let a = &mut self.appearance;
         a.transparency = a.transparency.clamp(0.3, 1.0);
-        a.glass_intensity = a.glass_intensity.clamp(0.0, 1.0);
-        a.bloom_amount = a.bloom_amount.clamp(0.0, 1.0);
-        a.reflection_strength = a.reflection_strength.clamp(0.0, 1.0);
-        a.particle_density = a.particle_density.clamp(0.0, 1.0);
         a.animation_speed = a.animation_speed.clamp(0.5, 2.0);
         let d = &mut self.dock;
         d.icon_size = d.icon_size.clamp(24, 96);
@@ -567,7 +526,7 @@ mod tests {
         assert_eq!(s.schema_version, CURRENT_SCHEMA_VERSION);
         assert_eq!(s.dock.icon_size, 48);
         assert!(s.dock.magnification);
-        assert_eq!(s.appearance.theme, "aero");
+        assert_eq!(s.appearance.theme, "system");
     }
 
     #[test]
@@ -597,7 +556,6 @@ mod tests {
     #[test]
     fn built_in_dock_items_default_to_visible() {
         let d = DockSettings::default();
-        assert!(d.show_search_button);
         assert!(d.show_settings_button);
         assert!(d.show_clock);
         assert!(d.show_system_status);
@@ -618,7 +576,6 @@ mod tests {
         assert_eq!(s.appearance.theme, "ocean");
         // new fields fall back to their defaults rather than failing
         assert_eq!(s.dock.auto_hide_delay_ms, 1400);
-        assert!(s.dock.show_search_button);
         assert!(s.dock.show_system_status);
     }
 
@@ -637,7 +594,7 @@ mod tests {
         let json = r#"{ "schemaVersion": 1, "futureField": true, "dock": { "iconSize": 64 } }"#;
         let s: Settings = serde_json::from_str(json).expect("lenient parse");
         assert_eq!(s.dock.icon_size, 64);
-        assert_eq!(s.appearance.theme, "aero");
+        assert_eq!(s.appearance.theme, "system");
     }
 
     fn pin(id: &str) -> PinnedItem {
@@ -682,45 +639,15 @@ mod tests {
     }
 
     #[test]
-    fn both_windows_keep_the_classic_material_by_default() {
-        let a = AppearanceSettings::default();
-        assert_eq!(a.dock_surface, SurfaceStyle::Aero);
-        assert_eq!(a.settings_surface, SurfaceStyle::Aero);
-    }
-
-    #[test]
-    fn the_two_surfaces_are_independent() {
-        let mut s = Settings::default();
-        s.appearance.dock_surface = SurfaceStyle::Liquid;
-        s.appearance.settings_surface = SurfaceStyle::Aero;
-        s.sanitize();
-        assert_eq!(s.appearance.dock_surface, SurfaceStyle::Liquid);
-        assert_eq!(s.appearance.settings_surface, SurfaceStyle::Aero);
-    }
-
-    #[test]
-    fn surfaces_serialize_as_plain_lowercase_names() {
-        let json = serde_json::to_string(&AppearanceSettings::default()).unwrap();
-        assert!(json.contains(r#""dockSurface":"aero""#), "got {json}");
-        assert!(json.contains(r#""settingsSurface":"aero""#), "got {json}");
-    }
-
-    #[test]
-    fn an_older_config_gains_both_surfaces() {
-        // a 1.2 file, written before surfaces existed
-        let json = r#"{ "schemaVersion": 2, "appearance": { "theme": "ocean" } }"#;
+    fn a_config_from_before_the_redesign_still_loads() {
+        // the retired material fields are ignored rather than fatal, and the
+        // retired theme id is kept for the UI to map
+        let json = r#"{ "schemaVersion": 2, "appearance": {
+            "theme": "night", "dockSurface": "liquid", "glassIntensity": 0.8
+        } }"#;
         let s: Settings = serde_json::from_str(json).expect("must still load");
-        assert_eq!(s.appearance.theme, "ocean");
-        assert_eq!(s.appearance.dock_surface, SurfaceStyle::Aero);
-        assert_eq!(s.appearance.settings_surface, SurfaceStyle::Aero);
-    }
-
-    #[test]
-    fn an_unknown_surface_name_is_rejected_rather_than_guessed() {
-        // a hand-edited file naming a material that does not exist should
-        // fail the field, not silently pick one
-        let json = r#"{ "appearance": { "dockSurface": "chrome" } }"#;
-        assert!(serde_json::from_str::<Settings>(json).is_err());
+        assert_eq!(s.appearance.theme, "night");
+        assert_eq!(s.appearance.accent, "#2563eb");
     }
 
     #[test]

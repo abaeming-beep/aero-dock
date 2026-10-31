@@ -1,12 +1,11 @@
 /**
- * First-launch welcome: a glass card blooming above the empty dock.
- * One choice, zero clutter: bring your apps over, or start clean.
+ * First-launch card above the empty dock. One choice: bring your apps over,
+ * or start clean.
  */
 
 import { motion } from "motion/react";
 import { useState } from "react";
-import { ipc } from "../../ipc/commands";
-import { KOFI_URL } from "../../links";
+import { t } from "../../i18n";
 import type { DockEdge } from "../../ipc/types";
 import { bloomOffset, edgePanelStyle } from "../dock/menuStore";
 import { springs } from "../../engine/animation/springs";
@@ -20,7 +19,7 @@ export function Welcome({ edge }: { edge: DockEdge }) {
   const run = (action: () => Promise<void>) => {
     setBusy(true);
     action().catch((e) => {
-      notify.error("Setup failed — you can still drag apps onto the dock", e);
+      notify.error(t.errors.setupFailed, e);
       setBusy(false);
     });
     // success needs no cleanup: the settings event flips
@@ -29,44 +28,27 @@ export function Welcome({ edge }: { edge: DockEdge }) {
 
   return (
     <motion.div
-      className="welcome-card glass"
+      className="welcome-card surface"
       style={{
         ...edgePanelStyle(edge, "calc(var(--icon-size) * 1.2 + 52px)"),
-        width: 380,
+        width: 340,
         zIndex: 90,
       }}
-      initial={{ opacity: 0, scale: 0.85, ...bloomOffset(edge) }}
+      initial={{ opacity: 0, scale: 0.97, ...bloomOffset(edge) }}
       animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
-      exit={{ opacity: 0, scale: 0.94, filter: "blur(6px)", transition: { duration: 0.2 } }}
-      transition={{ ...springs.bloom, delay: 0.25 }}
+      exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.12 } }}
+      transition={springs.bloom}
     >
-      <span className="welcome-orb" aria-hidden />
-      <h1>Welcome to Aero Dock</h1>
-      <p>Glass, water, and light for your desktop. Let's set up your dock.</p>
+      <h1>{t.welcome.title}</h1>
       <div className="welcome-actions">
         <button className="welcome-primary" disabled={busy} onClick={() => run(importStarterApps)}>
-          {busy ? "Importing…" : "Import my apps"}
+          {busy ? t.welcome.importing : t.welcome.importApps}
         </button>
         <button className="welcome-secondary" disabled={busy} onClick={() => run(startEmpty)}>
-          Start empty
+          {t.welcome.startEmpty}
         </button>
       </div>
-      <p className="welcome-hint">
-        Tip: drop any app or folder from Explorer onto the dock to pin it.
-      </p>
-      <p className="welcome-support">
-        Free and independently developed.{" "}
-        <button
-          className="welcome-support-link"
-          onClick={() =>
-            ipc
-              .launch(KOFI_URL)
-              .catch((e) => notify.error("Could not open the browser", e))
-          }
-        >
-          Support on Ko-fi ☕
-        </button>
-      </p>
+      <p className="welcome-hint">{t.welcome.tip}</p>
     </motion.div>
   );
 }

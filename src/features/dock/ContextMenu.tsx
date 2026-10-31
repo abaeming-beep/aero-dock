@@ -1,12 +1,14 @@
 /**
- * Aero context menu: a glass sheet that blooms open above the icon and
- * dissolves closed. Window list on top (for running apps), then actions.
+ * Context menu above the icon. Window list on top (for running apps), then
+ * actions.
  */
 
+import { Check } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { springs } from "../../engine/animation/springs";
 import { ipc } from "../../ipc/commands";
+import { t } from "../../i18n";
 import { notify } from "../feedback/toastStore";
 import type { AudioDevice, Settings } from "../../ipc/types";
 import { exeKey, useAppAudio } from "../../state/audioStore";
@@ -49,7 +51,7 @@ async function stackWithPrevious(settings: Settings, itemId: string): Promise<un
       id: `pin-${crypto.randomUUID()}`,
       kind: "stack",
       path: "",
-      name: `${prev.name} & more`,
+      name: t.dock.moreStack(prev.name),
       icon: null,
       children: [prev, current],
     };
@@ -77,13 +79,13 @@ function buildActions(item: DockItemView, settings: Settings): Action[] {
 
   // stacks have their own compact menu
   if (item.kind === "stack") {
-    actions.push({ label: "Unstack", run: () => unstack(settings, item.id) });
+    actions.push({ label: t.dock.menu.unstack, run: () => unstack(settings, item.id) });
     actions.push({
-      label: "Unpin from Dock",
+      label: t.dock.menu.unpin,
       run: () => ipc.unpinItem(item.id),
     });
     actions.push({
-      label: "Dock settings…",
+      label: t.dock.menu.settings,
       separatorAbove: true,
       run: () => ipc.openSettings(),
     });
@@ -91,21 +93,21 @@ function buildActions(item: DockItemView, settings: Settings): Action[] {
   }
 
   actions.push({
-    label: item.windows.length > 0 ? "New window" : "Open",
+    label: item.windows.length > 0 ? t.dock.menu.newWindow : t.dock.menu.open,
     run: () => ipc.launch(item.target, item.args),
   });
   actions.push({
-    label: "Run as administrator",
+    label: t.dock.menu.runAsAdmin,
     run: () => ipc.launchAsAdmin(item.target, item.args),
   });
   actions.push({
-    label: "Open file location",
+    label: t.dock.menu.openLocation,
     run: () => ipc.openFileLocation(item.target),
   });
 
   if (item.pinned) {
     actions.push({
-      label: "Unpin from Dock",
+      label: t.dock.menu.unpin,
       separatorAbove: true,
       run: () => ipc.unpinItem(item.id),
     });
@@ -114,14 +116,14 @@ function buildActions(item: DockItemView, settings: Settings): Action[] {
       actions.push({
         label:
           settings.pinned[idx - 1].kind === "stack"
-            ? "Add to stack on the left"
-            : "Stack with previous item",
+            ? t.dock.menu.addToStack
+            : t.dock.menu.stackWithPrevious,
         run: () => stackWithPrevious(settings, item.id),
       });
     }
   } else {
     actions.push({
-      label: "Pin to Dock",
+      label: t.dock.menu.pin,
       separatorAbove: true,
       run: () =>
         ipc.pinItem(
@@ -139,25 +141,25 @@ function buildActions(item: DockItemView, settings: Settings): Action[] {
   }
 
   actions.push({
-    label: "Dock settings…",
+    label: t.dock.menu.settings,
     separatorAbove: true,
     run: () => ipc.openSettings(),
   });
 
   if (item.windows.length === 1) {
     actions.push({
-      label: "Minimize",
+      label: t.dock.menu.minimize,
       separatorAbove: true,
       run: () => ipc.minimizeWindow(item.windows[0].hwnd),
     });
     actions.push({
-      label: "Close window",
+      label: t.dock.menu.closeWindow,
       danger: true,
       run: () => ipc.closeWindow(item.windows[0].hwnd),
     });
   } else if (item.windows.length > 1) {
     actions.push({
-      label: `Close all (${item.windows.length})`,
+      label: t.dock.menu.closeAll(item.windows.length),
       danger: true,
       separatorAbove: true,
       run: () => Promise.all(item.windows.map((w) => ipc.closeWindow(w.hwnd))),
@@ -226,11 +228,11 @@ export function ContextMenu({ settings, edge }: ContextMenuProps) {
     <AnimatePresence>
       {item && anchor && (
         <motion.div
-          className="aero-menu glass"
+          className="aero-menu surface"
           style={style}
-          initial={{ opacity: 0, scale: 0.82, ...bloomFrom }}
+          initial={{ opacity: 0, scale: 0.97, ...bloomFrom }}
           animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
-          exit={{ opacity: 0, scale: 0.94, filter: "blur(6px)", transition: { duration: 0.18 } }}
+          exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.12 } }}
           transition={springs.bloom}
         >
           {item.windows.length > 1 && (
@@ -240,7 +242,7 @@ export function ContextMenu({ settings, edge }: ContextMenuProps) {
                   key={w.hwnd}
                   className="aero-menu-item aero-menu-window"
                   onClick={() => {
-                    ipc.activateWindow(w.hwnd).catch(notify.on("Could not focus that window"));
+                    ipc.activateWindow(w.hwnd).catch(notify.on(t.errors.focusWindow));
                     close();
                   }}
                 >
@@ -260,9 +262,9 @@ export function ContextMenu({ settings, edge }: ContextMenuProps) {
                     close();
                   }}
                 >
-                  {audio.muted ? "Unmute" : "Mute"}
+                  {audio.muted ? t.common.unmute : t.common.mute}
                   <span className="aero-menu-hint">
-                    {audio.muted ? "muted" : `${audio.volume}%`}
+                    {audio.muted ? t.common.muted : `${audio.volume}%`}
                   </span>
                 </button>
               )}
@@ -271,13 +273,13 @@ export function ContextMenu({ settings, edge }: ContextMenuProps) {
                 aria-expanded={showDevices}
                 onClick={() => setShowDevices((v) => !v)}
               >
-                Audio output
-                <span className="aero-menu-hint">{showDevices ? "hide" : "choose"}</span>
+                {t.dock.menu.audioOutput}
+                <span className="aero-menu-hint">{showDevices ? t.dock.menu.hide : t.dock.menu.choose}</span>
               </button>
               {showDevices && (
                 <div className="aero-menu-devices">
                   {devices.length === 0 && (
-                    <div className="aero-menu-note">Looking for outputs…</div>
+                    <div className="aero-menu-note">{t.dock.menu.lookingForOutputs}</div>
                   )}
                   {devices.map((d) => {
                     const current = chosenDevice(settings, item.audioExe);
@@ -286,32 +288,28 @@ export function ContextMenu({ settings, edge }: ContextMenuProps) {
                       <button
                         key={d.id}
                         className="aero-menu-item aero-menu-device"
-                        data-active={active}
                         onClick={() => {
                           ipc
                             .setAppOutputDevice(item.audioExe, d.id, true)
                             .then((choice) => {
                               if (choice.openedSettings) {
                                 notify.info(
-                                  `Saved. Pick ${d.name} for ${item.name} in the Windows page that just opened.`,
+                                  t.dock.menu.savedPick(d.name, item.name),
                                 );
                               } else {
-                                notify.info(`Saved ${d.name} for ${item.name}.`);
+                                notify.info(t.dock.menu.saved(d.name, item.name));
                               }
                             })
-                            .catch(notify.on("Could not set the audio output"));
+                            .catch(notify.on(t.errors.setOutput));
                           close();
                         }}
                       >
+                        {active && <Check className="aero-menu-device-check" size={14} aria-hidden />}
                         <span className="aero-menu-device-name">{d.name}</span>
-                        {d.isDefault && <span className="aero-menu-hint">system</span>}
+                        {d.isDefault && <span className="aero-menu-hint">{t.dock.menu.system}</span>}
                       </button>
                     );
                   })}
-                  <div className="aero-menu-note">
-                    Windows performs the routing itself, so the last step happens
-                    on its own settings page.
-                  </div>
                 </div>
               )}
               <div className="aero-menu-separator" />
@@ -325,7 +323,7 @@ export function ContextMenu({ settings, edge }: ContextMenuProps) {
                 data-danger={action.danger}
                 onClick={() => {
                   Promise.resolve(action.run()).catch(
-                    notify.on(`"${action.label}" failed`),
+                    notify.on(t.errors.action(action.label)),
                   );
                   close();
                 }}
