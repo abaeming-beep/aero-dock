@@ -1,6 +1,6 @@
 [package]
 name = "aero-dock"
-version = "1.4.0"
+version = "1.4.1"
 description = "AB Dock - an app dock for Windows, forked from Aero Dock"
 authors = ["Ryan Panda"]
 license = "MIT"
