@@ -30,7 +30,9 @@ pub fn run() {
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             None,
         ))
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(DockGeometry::default())
+        .manage(commands::updates::PendingUpdate::default())
         .setup(|app| {
             let handle = app.handle().clone();
             let store = SettingsStore::load(&handle)?;
@@ -98,6 +100,9 @@ pub fn run() {
             commands::apps::resolve_drop,
             commands::apps::list_folder,
             commands::apps::list_recent_files,
+            commands::updates::check_for_update,
+            commands::updates::pending_update,
+            commands::updates::install_update,
             commands::dock::resize_dock,
             commands::dock::set_dock_hit_rect,
             commands::dock::list_monitors,

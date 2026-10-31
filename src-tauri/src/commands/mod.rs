@@ -4,5 +4,6 @@ pub mod dock;
 pub mod modes;
 pub mod settings;
 pub mod system_cmd;
+pub mod updates;
 pub mod widgets;
 pub mod windows_cmd;

@@ -28,6 +28,17 @@ export function DockApp() {
     hydrateRunning();
   }, [hydrate, hydrateRunning]);
 
+  // One update check per start. No network is the normal reason for this
+  // to fail, and settings can always check again, so a failure stays quiet.
+  useEffect(() => {
+    ipc
+      .checkForUpdate()
+      .then((version) => {
+        if (version) notify.info(t.settings.updateAvailable(version));
+      })
+      .catch((e) => console.debug("update check skipped", e));
+  }, []);
+
   // Read the mixer whenever the set of running apps changes. Sessions
   // appear and disappear with the apps that own them, and this is the
   // only signal for that; there is no polling anywhere.

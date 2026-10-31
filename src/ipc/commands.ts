@@ -147,6 +147,11 @@ export const ipc = {
   widgetMediaControl: (action: MediaAction) =>
     invoke<boolean>("widget_media_control", { action }),
 
+  // updates
+  checkForUpdate: () => invoke<string | null>("check_for_update"),
+  pendingUpdate: () => invoke<string | null>("pending_update"),
+  installUpdate: () => invoke<void>("install_update"),
+
   // dock window
   resizeDock: (width: number, height: number) =>
     invoke<void>("resize_dock", { width, height }),

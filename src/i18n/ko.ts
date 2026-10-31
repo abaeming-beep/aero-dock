@@ -29,6 +29,8 @@ export const ko = {
     exportSettings: "설정을 내보내지 못했습니다",
     quit: "종료하지 못했습니다",
     openSettings: "설정을 열지 못했습니다",
+    checkUpdate: "업데이트를 확인하지 못했습니다. 네트워크 연결을 확인하세요",
+    installUpdate: "업데이트를 설치하지 못했습니다",
     focusWindow: "창으로 전환하지 못했습니다",
     minimizeWindow: "창을 최소화하지 못했습니다",
     closeWindow: "창을 닫지 못했습니다",
@@ -120,6 +122,14 @@ export const ko = {
     quit: "종료",
 
     version: "버전",
+    checkUpdate: "업데이트 확인",
+    checkingUpdate: "확인 중",
+    installUpdate: "지금 업데이트",
+    installingUpdate: "설치 중",
+    upToDate: "최신 버전입니다.",
+    updateFound: (version: string) => `새 버전 ${version}을 찾았습니다.`,
+    updateAvailable: (version: string) =>
+      `새 버전 ${version}이 있습니다. 설정의 정보 화면에서 설치할 수 있습니다.`,
     storage: "저장 위치",
     portable: "포터블",
     installed: "설치됨",

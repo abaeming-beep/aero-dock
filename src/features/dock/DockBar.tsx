@@ -129,7 +129,8 @@ export function DockBar({ settings, items, onLaunch }: DockBarProps) {
       setWindowShrunk(false);
       return;
     }
-    if (pointerInside || menuOpen || fileDragOver) {
+    // a toast is drawn in the dock's window, so hiding would hide it too
+    if (pointerInside || menuOpen || fileDragOver || toastCount > 0) {
       setHidden(false);
       setWindowShrunk(false);
       return;
@@ -143,7 +144,7 @@ export function DockBar({ settings, items, onLaunch }: DockBarProps) {
       clearTimeout(hideTimer.current);
       clearTimeout(shrinkTimer.current);
     };
-  }, [autoHide, pointerInside, menuOpen, fileDragOver, autoHideDelay]);
+  }, [autoHide, pointerInside, menuOpen, fileDragOver, toastCount, autoHideDelay]);
 
   // Deterministic window size: no ResizeObserver, no feedback loops.
   const windowSize = useMemo(() => {

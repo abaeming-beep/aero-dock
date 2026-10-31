@@ -23,6 +23,7 @@ import { useSettings } from "../../state/settingsStore";
 import { REPO_URL } from "../../links";
 import { AudioCard } from "./AudioCard";
 import { ModesCard } from "./ModesCard";
+import { UpdateButton } from "./UpdateButton";
 import { WidgetsCard } from "./WidgetsCard";
 import { AeroSegmented, AeroSlider, AeroToggle, CtlLabel, HelpTip } from "./controls";
 import { t } from "../../i18n";
@@ -407,7 +408,10 @@ export function SettingsApp() {
             <section className="settings-card">
               <div className="ctl-row">
                 <CtlLabel label={t.settings.version} />
-                <span className="settings-about-value">AB Dock {__APP_VERSION__}</span>
+                <div className="ctl-actions">
+                  <span className="settings-about-value">AB Dock {__APP_VERSION__}</span>
+                  {storage && !storage.portable && <UpdateButton onStatus={onStatus} />}
+                </div>
               </div>
               {storage && (
                 <div className="ctl-row ctl-row-stacked">
