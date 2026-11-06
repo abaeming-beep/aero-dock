@@ -77,6 +77,10 @@ pub fn run() {
                     }
                 });
             }
+            #[cfg(windows)]
+            if app.state::<SettingsStore>().get().launch_at_startup {
+                platform::windows::startup::repair(&handle);
+            }
             commands::apps::warm_app_cache();
             Ok(())
         })

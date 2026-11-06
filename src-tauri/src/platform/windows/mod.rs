@@ -7,6 +7,7 @@ pub mod media;
 pub mod monitors;
 pub mod recent;
 pub mod running;
+pub mod startup;
 pub mod system;
 pub mod taskbar;
 pub mod thumbnails;
